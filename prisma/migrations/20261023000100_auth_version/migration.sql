@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "authVersion" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "token_usage" ADD COLUMN "usageSource" TEXT;

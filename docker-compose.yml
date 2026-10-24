@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  llm-canvas:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llm-canvas
+    ports:
+      - "4250:4250"
+    environment:
+      # Database configuration
+      - DATABASE_URL=file:/app/prisma/dev.db
+      # NextAuth v5 configuration
+      # AUTH_SECRET will be generated automatically in docker-entrypoint.sh
+      - AUTH_SECRET=${AUTH_SECRET:-}
+      # Port configuration
+      - PORT=4250
+      # Entrypoint behavior configuration
+      # App limits
+      - MVP_USER_LIMIT=${MVP_USER_LIMIT:-10}
+      - MVP_STORAGE_LIMIT_DEFAULT=${MVP_STORAGE_LIMIT_DEFAULT:-1073741824}
+    env_file:
+      - docker.env
+    volumes:
+      # Persistent database storage
+      - db:/app/prisma
+      # Persistent file uploads
+      - uploads:/app/public/uploads
+    restart: unless-stopped
+    # Performance optimizations
+    shm_size: '256mb'  # Increased shared memory for Prisma (helps with database operations)
+    # Resource limits (optional, uncomment if needed)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4250/api/health', (res) => { console.log('Health check:', res.statusCode); process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', (err) => { console.error('Health check error:', err.message); process.exit(1); })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  db:
+    driver: local
+  uploads:
+    driver: local

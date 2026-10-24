@@ -1,0 +1,199 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                   String   @id @default(cuid())
+  email                String   @unique
+  name                 String?
+  image                String?
+  passwordHash         String? // For credentials authentication
+  authVersion          Int      @default(0)
+  analyticsEnabled     Boolean  @default(true)
+  isOwner              Boolean  @default(false) // Installation owner (first user)
+  storageLimitBytes    Int? // Storage limit in bytes (NULL = unlimited for owner)
+  totalNodesCreated    Int      @default(0) // Cumulative count of created nodes
+  totalCanvasesCreated Int      @default(0) // Cumulative count of created canvases
+  totalTokensCreated   Int      @default(0) // Cumulative count of created tokens
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  canvases       Canvas[]
+  accounts       Account[]
+  sessions       Session[]
+  settings       UserSettings?
+  createdInvites InviteCode[]  @relation("InviteCodeCreator")
+  usedInvites    InviteCode[]  @relation("InviteCodeUsedBy")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Canvas {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  content     String? // JSON string for canvas data
+  isPublic    Boolean  @default(false)
+  isPinned    Boolean  @default(false) // For pinning canvases to top
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Cached values for performance
+  nodeCount            Int? // Number of nodes in canvas
+  largestContextTokens Int? // Size of largest context in tokens
+  contextCacheUpdated  DateTime? // When context cache was updated
+  totalTokensUsed      Int?      @default(0) // Total sum of all tokens used (cumulative)
+
+  // Relations
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media      Media[] // Relation to media files
+  nodes      Node[] // Relation to nodes
+  tokenUsage TokenUsage[] // Detailed token usage statistics
+
+  @@map("canvases")
+}
+
+model Media {
+  id               String    @id @default(cuid())
+  canvasId         String
+  filename         String // Original filename
+  filePath         String // Path to file on server
+  mimeType         String // MIME type of file
+  fileSize         Int // File size in bytes
+  width            Int? // Image width
+  height           Int? // Image height
+  csvData          String? // CSV data for passing to context
+  csvRows          Int? // Number of rows in CSV
+  csvColumns       Int? // Number of columns in CSV
+  durationMs       Int? // Video duration in milliseconds
+  frameRate        Float? // Average video FPS
+  frameCount       Int? // Number of generated frames
+  videoFrames      Json? // Frame metadata { frames: [{ path, width, height, timestampMs }] }
+  thumbnailPath    String? // Thumbnail for video preview
+  geminiFileUri    String? // Link to file uploaded to Gemini
+  geminiUploadedAt DateTime? // Time file was uploaded to Gemini (for invalidation)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  canvas Canvas @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+
+  @@index([geminiUploadedAt], map: "idx_media_gemini_uploaded")
+  @@map("media")
+}
+
+model Node {
+  id        String   @id @default(cuid())
+  canvasId  String
+  type      String // 'memory', 'gemini', 'openai', 'text', etc.
+  position  Json // {x: number, y: number}
+  data      Json // Node-specific data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  canvas Canvas @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+
+  @@map("nodes")
+}
+
+model UserSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providers Json // { openai: { enc:"...", activeModels:[...] }, gemini: {...}, openrouter: {...} }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_settings")
+}
+
+model InviteCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  createdBy String // Owner user ID
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+  usedBy    String? // User ID who used it
+
+  // Relations
+  creator    User  @relation("InviteCodeCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  usedByUser User? @relation("InviteCodeUsedBy", fields: [usedBy], references: [id], onDelete: SetNull)
+
+  @@map("invite_codes")
+}
+
+model TokenUsage {
+  id              String   @id @default(cuid())
+  canvasId        String
+  operator        String // 'openai', 'gemini', 'openrouter', 'nanobanana'
+  modelName       String // Model name
+  totalTokens     Int // Total number of tokens
+  inputTokens     Int? // Input tokens
+  outputTokens    Int? // Output tokens
+  reasoningTokens Int? // Reasoning tokens
+  cachedTokens    Int? // Cached tokens
+  audioTokens     Int? // Audio tokens
+  videoTokens     Int? // Video tokens
+  imageTokens     Int? // Image tokens
+  otherTools      Int? // Other tools tokens (total - input - output - reasoning)
+  usageSource     String?
+  createdAt       DateTime @default(now())
+
+  // Relations
+  canvas Canvas @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+
+  @@index([canvasId])
+  @@index([operator])
+  @@index([canvasId, operator])
+  @@map("token_usage")
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-24",
+  "sources": [
+    {
+      "name": "ffmpeg",
+      "version": "9.0.2",
+      "license": "LGPL-2.1-or-later",
+      "archive": {
+        "url": "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz",
+        "sha256": "8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e"
+      },
+      "signature": {
+        "url": "https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz.asc",
+        "sha256": "d617fd94ea354dadd2a8bb16243d37c44e1e9729b06b6ad58fe30bfb0fa943f2"
+      },
+      "evidence": [
+        {
+          "url": "https://ffmpeg.org/ffmpeg-devel.asc",
+          "sha256": "397b3becedcd5a98769967ff1ff8501ddc89f8368b8f766e4701377d7dbaabe5"
+        }
+      ],
+      "verification": "Archive downloaded from the primary release server and SHA-256 measured; detached signature verified with the release key fingerprint FCF986EA15E6E293A5644F10B4322F04D67658D8 published at https://ffmpeg.org/download.html. Signature verified when pinning; builds verify pinned SHA-256 bytes."
+    },
+    {
+      "name": "dav1d",
+      "version": "1.5.4",
+      "license": "BSD-2-Clause",
+      "archive": {
+        "url": "https://downloads.videolan.org/pub/videolan/dav1d/1.5.4/dav1d-1.5.4.tar.xz",
+        "sha256": "686616b7c69eb88d44459391ab25cac13b6647a3b288835c5784e71c1514a5c5"
+      },
+      "signature": {
+        "url": "https://downloads.videolan.org/pub/videolan/dav1d/1.5.4/dav1d-1.5.4.tar.xz.asc",
+        "sha256": "b7e9664c8d847b2e88b059843b9977a74df2a7c7d911b094821dc236671bf9fc"
+      },
+      "evidence": [
+        {
+          "url": "https://downloads.videolan.org/pub/videolan/dav1d/1.5.4/dav1d-1.5.4.tar.xz.sha256",
+          "sha256": "440cc7d8befc121df5f762d4492e0b734ac02f2bc890bde36a41cff3346e2506"
+        }
+      ],
+      "verification": "Downloaded archive SHA-256 equals the checksum published in the primary upstream .sha256 file. Detached signature retained but not cryptographically verified."
+    },
+    {
+      "name": "zlib",
+      "version": "1.3.2",
+      "license": "Zlib",
+      "archive": {
+        "url": "https://zlib.net/zlib-1.3.2.tar.xz",
+        "sha256": "d7a0654783a4da529d1bb793b7ad9c3318020af77667bcae35f95d0e42a792f3"
+      },
+      "signature": {
+        "url": "https://zlib.net/zlib-1.3.2.tar.xz.asc",
+        "sha256": "03ce710347e2f84fa7ed0a6ae6a93467b08031a3022fc296da40220a83b96667"
+      },
+      "evidence": [],
+      "verification": "Downloaded archive SHA-256 equals the tar.xz checksum published at https://zlib.net/. Detached signature retained but not cryptographically verified."
+    }
+  ]
+}

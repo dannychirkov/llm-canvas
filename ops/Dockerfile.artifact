@@ -1,0 +1,13 @@
+ARG RUNTIME_BASE
+FROM ${RUNTIME_BASE}
+WORKDIR /app
+RUN rm -rf /app/.next
+COPY --chown=nextjs:nodejs next/ ./.next/
+COPY --chown=nextjs:nodejs static/ ./.next/static/
+COPY --chown=nextjs:nodejs server.js package.json ./
+COPY --chmod=755 docker-entrypoint.sh ./
+COPY --chown=nextjs:nodejs public/ ./public/
+COPY external-packages.json link-externals.js /tmp/
+RUN node /tmp/link-externals.js /tmp/external-packages.json && rm /tmp/link-externals.js /tmp/external-packages.json
+ARG REVISION
+LABEL org.opencontainers.image.revision=${REVISION}

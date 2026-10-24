@@ -1,0 +1,382 @@
+name: Native desktop acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/desktop-release-validation-*']
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(contains(github.event.head_commit.message, '[windows-only]') && '["windows-latest"]' || '["ubuntu-latest","windows-latest","macos-latest"]') }}
+    runs-on: ${{ matrix.os }}
+    env:
+      JOBS: '4'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Initialize diagnostics
+        run: |
+          mkdir -p "$RUNNER_TEMP/desktop-diagnostics"
+          node -e 'const os=require("node:os");process.stdout.write(JSON.stringify({platform:process.platform,architecture:process.arch,node:process.versions.node,revision:process.env.GITHUB_SHA,osRelease:os.release(),osVersion:os.version(),glibc:process.report.getReport().header.glibcVersionRuntime||null})+"\n")' > "$RUNNER_TEMP/desktop-diagnostics/runner.json"
+      - run: npm ci
+      - run: npx --no-install prisma generate
+      - run: npm run lint
+      - name: Test desktop orchestration, profile and platform paths
+        run: |
+          set -o pipefail
+          node --test tests/desktopAcceptance.test.js tests/desktopProfile.test.js tests/desktopRuntime.test.js tests/desktopStorageLock.test.js tests/desktopPackaging.test.js tests/desktopWindowPolicy.test.js tests/csvPreviewSafety.test.js tests/publicPathPlatforms.test.js | tee "$RUNNER_TEMP/desktop-diagnostics/tests.tap"
+      - name: Provision Linux native media, display and Secret Service dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc make pkgconf meson ninja-build nasm curl xz-utils xvfb xauth openbox dbus-x11 gnome-keyring libsecret-1-0 libsecret-tools libnss3 libatk-bridge2.0-0 libgtk-3-0t64 libasound2t64
+      - name: Provision macOS native media compiler tools
+        if: runner.os == 'macOS'
+        run: brew install meson ninja nasm pkgconf
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+      - name: Provision Windows MINGW64 native media compiler tools
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel
+            python
+            make
+            curl
+            tar
+            xz
+            diffutils
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-winpthreads
+            mingw-w64-x86_64-meson
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-nasm
+      - name: Build paired media tools from source on Linux or macOS
+        if: runner.os != 'Windows'
+        run: bash ops/build-media.sh --prefix "$RUNNER_TEMP/desktop-media-work" --out "$RUNNER_TEMP/desktop-media-build" --cache "$RUNNER_TEMP/desktop-media-cache"
+      - name: Build paired media tools from source on Windows MINGW64
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: bash ops/build-media.sh --prefix "$(cygpath -u "$RUNNER_TEMP")/desktop-media-work" --out "$(cygpath -u "$RUNNER_TEMP")/desktop-media-build" --cache "$(cygpath -u "$RUNNER_TEMP")/desktop-media-cache"
+      - name: Build shared application
+        run: |
+          node desktop/video-smoke.cjs "$RUNNER_TEMP/desktop-media-build" > "$RUNNER_TEMP/desktop-diagnostics/video.json"
+          npm run build
+        env:
+          AUTH_SECRET: desktop-build-only-unused-at-runtime
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Package on native OS
+        run: npm run desktop:package -- "$RUNNER_TEMP/desktop-stage" "$RUNNER_TEMP/desktop-dist"
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          LLM_CANVAS_MEDIA_BUILD: ${{ runner.temp }}/desktop-media-build
+      - name: Extract the actual Linux AppImage payload
+        if: runner.os == 'Linux'
+        timeout-minutes: 5
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+          const path = require('node:path')
+          const { execFileSync } = require('node:child_process')
+          const dist = path.join(process.env.RUNNER_TEMP, 'desktop-dist')
+          const artifacts = fs.readdirSync(dist).filter(name => name.endsWith('.AppImage'))
+          if (artifacts.length !== 1) throw new Error('Expected one AppImage artifact')
+          const artifact = path.join(dist, artifacts[0])
+          const prefix = path.join(process.env.RUNNER_TEMP, 'desktop-installed')
+          fs.mkdirSync(prefix)
+          fs.chmodSync(artifact, 0o755)
+          execFileSync(artifact, ['--appimage-extract'], { cwd: prefix, stdio: 'ignore', timeout: 180000 })
+          const root = path.join(prefix, 'squashfs-root'), executable = path.join(root, 'AppRun')
+          fs.accessSync(executable, fs.constants.X_OK)
+          fs.writeFileSync(path.join(process.env.RUNNER_TEMP, 'desktop-diagnostics', 'installation.json'), JSON.stringify({mode:'appimage-extracted',artifact:artifacts[0],root,executable}, null, 2))
+          fs.appendFileSync(process.env.GITHUB_ENV, `DESKTOP_ARTIFACT=${artifact}\nDESKTOP_ROOT=${root}\nDESKTOP_APP=${executable}\n`)
+          NODE
+      - name: Silently install the actual Windows NSIS artifact
+        if: runner.os == 'Windows'
+        timeout-minutes: 5
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'Installer acceptance requires a disposable GitHub-hosted runner' }
+          $artifacts = @(Get-ChildItem -LiteralPath (Join-Path $env:RUNNER_TEMP 'desktop-dist') -Filter '*-Setup.exe' -File)
+          if ($artifacts.Count -ne 1) { throw 'Expected one NSIS artifact' }
+          $prefix = Join-Path $env:RUNNER_TEMP 'desktop-installed'
+          if (Test-Path -LiteralPath $prefix) { throw 'Installation prefix must be fresh' }
+          # NSIS requires /D last and unquoted, including when the path has spaces.
+          $installer = Start-Process -FilePath $artifacts[0].FullName -ArgumentList @('/S', '/currentuser', "/D=$prefix") -PassThru
+          if (-not $installer.WaitForExit(180000)) { $installer.Kill(); throw 'NSIS installation deadline exceeded' }
+          $installer.WaitForExit()
+          if ($installer.ExitCode -ne 0) { throw "NSIS installation failed: $($installer.ExitCode)" }
+          $executable = Join-Path $prefix 'LLM Canvas.exe'
+          if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) { throw 'Installed application executable missing' }
+          @{mode='nsis-installed';artifact=$artifacts[0].Name;root=$prefix;executable=$executable;exitCode=$installer.ExitCode} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'desktop-diagnostics/installation.json') -Encoding utf8
+          "DESKTOP_ARTIFACT=$($artifacts[0].FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "DESKTOP_ROOT=$prefix" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "DESKTOP_APP=$executable" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Mount the actual macOS DMG read-only and copy its app
+        if: runner.os == 'macOS'
+        timeout-minutes: 5
+        run: |
+          export DESKTOP_ARTIFACT="$(node -e 'const fs=require("node:fs"),path=require("node:path");const dist=path.join(process.env.RUNNER_TEMP,"desktop-dist"),files=fs.readdirSync(dist).filter(name=>name.endsWith(".dmg"));if(files.length!==1)process.exit(1);process.stdout.write(path.join(dist,files[0]))')"
+          desktop_mount="$RUNNER_TEMP/desktop-dmg-mount"
+          mkdir "$desktop_mount" "$RUNNER_TEMP/desktop-installed"
+          trap 'hdiutil detach "$desktop_mount" >/dev/null 2>&1 || true' EXIT
+          hdiutil attach -readonly -nobrowse -noautoopen -mountpoint "$desktop_mount" "$DESKTOP_ARTIFACT"
+          export DESKTOP_ROOT="$RUNNER_TEMP/desktop-installed/LLM Canvas.app"
+          ditto "$desktop_mount/LLM Canvas.app" "$DESKTOP_ROOT"
+          hdiutil detach "$desktop_mount"
+          trap - EXIT
+          export DESKTOP_APP="$DESKTOP_ROOT/Contents/MacOS/LLM Canvas"
+          node <<'NODE'
+          const fs = require('node:fs'), path = require('node:path')
+          fs.accessSync(process.env.DESKTOP_APP, fs.constants.X_OK)
+          fs.writeFileSync(path.join(process.env.RUNNER_TEMP, 'desktop-diagnostics', 'installation.json'), JSON.stringify({mode:'dmg-copied',artifact:path.basename(process.env.DESKTOP_ARTIFACT),root:process.env.DESKTOP_ROOT,executable:process.env.DESKTOP_APP,gatekeeperFirstLaunchVerified:false}, null, 2))
+          for (const name of ['DESKTOP_ARTIFACT','DESKTOP_ROOT','DESKTOP_APP']) fs.appendFileSync(process.env.GITHUB_ENV, `${name}=${process.env[name]}\n`)
+          NODE
+      - name: Create isolated macOS CI keychain
+        if: runner.os == 'macOS'
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+          const path = require('node:path')
+          const { execFileSync } = require('node:child_process')
+          const { randomBytes } = require('node:crypto')
+          if (process.env.GITHUB_ACTIONS !== 'true' || process.env.RUNNER_ENVIRONMENT !== 'github-hosted') throw new Error('Keychain provisioning is restricted to disposable GitHub-hosted runners')
+          const security = args => execFileSync('security', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+          const keychain = path.join(process.env.RUNNER_TEMP, 'llm-canvas-acceptance.keychain-db')
+          const list = [...security(['list-keychains', '-d', 'user']).matchAll(/"([^"]+)"/g)].map(match => match[1])
+          const previousDefault = security(['default-keychain', '-d', 'user']).trim().replace(/^"|"$/g, '')
+          fs.writeFileSync(path.join(process.env.RUNNER_TEMP, 'desktop-keychain-restore.json'), JSON.stringify({list, previousDefault, keychain}), { mode: 0o600 })
+          const password = randomBytes(32).toString('hex')
+          security(['create-keychain', '-p', password, keychain])
+          security(['set-keychain-settings', '-lut', '21600', keychain])
+          security(['unlock-keychain', '-p', password, keychain])
+          security(['list-keychains', '-d', 'user', '-s', keychain])
+          security(['default-keychain', '-d', 'user', '-s', keychain])
+          NODE
+      - name: Native Linux acceptance with external Xvfb, D-Bus and keyring
+        if: runner.os == 'Linux'
+        timeout-minutes: 20
+        run: |
+          desktop_sandbox="$DESKTOP_ROOT/chrome-sandbox"
+          sudo chown root:root "$desktop_sandbox"
+          sudo chmod 4755 "$desktop_sandbox"
+          xvfb-run -a dbus-run-session -- bash -euo pipefail <<'LINUX'
+          export XDG_DATA_HOME="$RUNNER_TEMP/desktop-keyring-data"
+          export XDG_CONFIG_HOME="$RUNNER_TEMP/desktop-keyring-config"
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/desktop-keyring-runtime"
+          export XDG_CURRENT_DESKTOP=GNOME
+          mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_RUNTIME_DIR"
+          chmod 700 "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_RUNTIME_DIR"
+          openbox --sm-disable > "$RUNNER_TEMP/desktop-window-manager.log" 2>&1 &
+          desktop_wm_pid=$!
+          trap 'kill "$desktop_wm_pid" 2>/dev/null || true' EXIT
+          node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))' | gnome-keyring-daemon --unlock --components=secrets > "$RUNNER_TEMP/desktop-keyring-session"
+          # The daemon is discoverable through this private session bus. Do not
+          # source its stdout or allow basic_text as a password-store fallback.
+          for attempt in $(seq 1 50); do
+            if gdbus call --session --dest org.freedesktop.secrets --object-path /org/freedesktop/secrets --method org.freedesktop.DBus.Peer.Ping >/dev/null 2>&1; then break; fi
+            sleep 0.2
+          done
+          gdbus call --session --dest org.freedesktop.secrets --object-path /org/freedesktop/secrets --method org.freedesktop.DBus.Peer.Ping >/dev/null
+          node desktop/acceptance.cjs --app "$DESKTOP_APP" --root "$DESKTOP_ROOT" --artifact "$DESKTOP_ARTIFACT" --output "$RUNNER_TEMP/desktop-diagnostics/acceptance"
+          LINUX
+      - name: Native Windows DPAPI or macOS Keychain acceptance
+        if: runner.os != 'Linux'
+        timeout-minutes: 20
+        run: node desktop/acceptance.cjs --app "$DESKTOP_APP" --root "$DESKTOP_ROOT" --artifact "$DESKTOP_ARTIFACT" --output "$RUNNER_TEMP/desktop-diagnostics/acceptance"
+      - name: Uninstall the isolated Windows application after acceptance
+        if: always() && runner.os == 'Windows'
+        timeout-minutes: 5
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') { exit 0 }
+          $prefix = Join-Path $env:RUNNER_TEMP 'desktop-installed'
+          if (-not (Test-Path -LiteralPath $prefix)) { exit 0 }
+          $uninstallers = @(Get-ChildItem -LiteralPath $prefix -Filter '*Uninstall*.exe' -File)
+          if ($uninstallers.Count -gt 1) { throw 'Ambiguous isolated uninstaller' }
+          if ($uninstallers.Count -eq 1) {
+            $uninstaller = Start-Process -FilePath $uninstallers[0].FullName -ArgumentList @('/S', "_?=$prefix") -PassThru
+            if (-not $uninstaller.WaitForExit(120000)) { $uninstaller.Kill(); throw 'NSIS uninstall deadline exceeded' }
+            $uninstaller.WaitForExit()
+            if ($uninstaller.ExitCode -ne 0) { throw "NSIS uninstall failed: $($uninstaller.ExitCode)" }
+          }
+          Remove-Item -LiteralPath $prefix -Recurse -Force
+      - name: Remove isolated Linux or macOS artifact payload after acceptance
+        if: always() && runner.os != 'Windows'
+        run: |
+          if [ "${RUNNER_OS}" = macOS ] && mount | rg -F "$RUNNER_TEMP/desktop-dmg-mount" >/dev/null; then
+            hdiutil detach "$RUNNER_TEMP/desktop-dmg-mount"
+          fi
+          rm -rf "$RUNNER_TEMP/desktop-installed"
+      - name: Restore and delete ephemeral macOS keychain
+        if: always() && runner.os == 'macOS'
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+          const path = require('node:path')
+          const { execFileSync } = require('node:child_process')
+          const stateFile = path.join(process.env.RUNNER_TEMP, 'desktop-keychain-restore.json')
+          if (!fs.existsSync(stateFile)) process.exit(0)
+          const {list, previousDefault, keychain} = JSON.parse(fs.readFileSync(stateFile, 'utf8'))
+          const security = args => execFileSync('security', args, { stdio: 'ignore' })
+          security(['default-keychain', '-d', 'user', '-s', previousDefault])
+          security(['list-keychains', '-d', 'user', '-s', ...list])
+          if (fs.existsSync(keychain)) security(['delete-keychain', keychain])
+          fs.unlinkSync(stateFile)
+          NODE
+      - name: Verify passing installation evidence and hash the accepted native artifact
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs')
+          const path = require('node:path')
+          const { createHash } = require('node:crypto')
+          const { createReadStream } = require('node:fs')
+          async function main() {
+            const diagnostics = path.join(process.env.RUNNER_TEMP, 'desktop-diagnostics')
+            const report = JSON.parse(fs.readFileSync(path.join(diagnostics, 'acceptance', 'report.json'), 'utf8'))
+            const installation = JSON.parse(fs.readFileSync(path.join(diagnostics, 'installation.json'), 'utf8'))
+            if (report.status !== 'passed' || !report.artifact || report.launches.length !== 4 || !report.launches.every(launch => launch.cdpProfileOwnershipProven && launch.artifactProcessPathsProven) || report.checks.length !== 8 || report.recoveries.length !== 2 || !report.recoveries.every(recovery => recovery.resumeVerified) || !report.mediaTools?.pcmWavRoundTrip || !report.mediaTools?.sharpPngRoundTrip) throw new Error('Native acceptance evidence is incomplete')
+            const expectedMode = {linux:'appimage-extracted',win32:'nsis-installed',darwin:'dmg-copied'}[report.platform]
+            if (installation.mode !== expectedMode || installation.artifact !== report.artifact.name) throw new Error('Artifact installation evidence is missing')
+            const dist = path.join(process.env.RUNNER_TEMP, 'desktop-dist')
+            const files = fs.readdirSync(dist).filter(name => name === report.artifact.name)
+            if (!files.length) throw new Error('Native output binaries are missing')
+            const binaries = []
+            for (const name of files) {
+              const hash = createHash('sha256')
+              for await (const chunk of createReadStream(path.join(dist, name))) hash.update(chunk)
+              binaries.push({name, bytes: fs.statSync(path.join(dist, name)).size, sha256: hash.digest('hex')})
+            }
+            if (!binaries.some(binary => binary.name === report.artifact.name && binary.sha256 === report.artifact.sha256)) throw new Error('Accepted artifact differs from upload binary')
+            fs.writeFileSync(path.join(diagnostics, 'binaries.json'), JSON.stringify({revision: process.env.GITHUB_SHA, binaries}, null, 2) + '\n')
+          }
+          main().catch(() => { process.stderr.write('Binary evidence verification failed\n'); process.exitCode = 1 })
+          NODE
+      - name: Upload accepted native packages and evidence
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-accepted-${{ matrix.os }}
+          path: |
+            ${{ env.DESKTOP_ARTIFACT }}
+            ${{ runner.temp }}/desktop-diagnostics/binaries.json
+            ${{ runner.temp }}/desktop-diagnostics/runner.json
+            ${{ runner.temp }}/desktop-diagnostics/installation.json
+            ${{ runner.temp }}/desktop-diagnostics/tests.tap
+            ${{ runner.temp }}/desktop-diagnostics/acceptance/report.json
+          if-no-files-found: error
+      - name: Retain bounded media compiler diagnostics
+        if: always()
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs'), path = require('node:path')
+          const source = path.join(process.env.RUNNER_TEMP, 'desktop-media-build', 'logs')
+          const output = path.join(process.env.RUNNER_TEMP, 'desktop-diagnostics', 'media')
+          if (fs.existsSync(source)) {
+            fs.mkdirSync(output, {recursive:true})
+            let remaining = 8 * 1024 * 1024
+            for (const name of fs.readdirSync(source).sort()) {
+              const filename = path.join(source, name)
+              if (!/^[a-zA-Z0-9._-]+\.(log|json)$/.test(name) || !fs.lstatSync(filename).isFile() || remaining <= 0) continue
+              const size = Math.min(fs.statSync(filename).size, 1024 * 1024, remaining)
+              const buffer = Buffer.alloc(size), descriptor = fs.openSync(filename, 'r')
+              try { fs.readSync(descriptor, buffer, 0, size, 0) } finally { fs.closeSync(descriptor) }
+              fs.writeFileSync(path.join(output, name), buffer)
+              remaining -= size
+            }
+          }
+          NODE
+      - name: Retain rejected installers privately for diagnosis
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-rejected-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/desktop-dist/*.AppImage
+            ${{ runner.temp }}/desktop-dist/*.dmg
+            ${{ runner.temp }}/desktop-dist/*-Setup.exe
+          if-no-files-found: ignore
+          retention-days: 1
+      - name: Upload diagnostics without profiles, keys or databases
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-diagnostics-${{ matrix.os }}
+          path: ${{ runner.temp }}/desktop-diagnostics/
+          if-no-files-found: warn
+          retention-days: 7
+
+  headless:
+    if: ${{ !contains(github.event.head_commit.message, '[windows-only]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build source-complete headless image
+        run: docker build --build-arg REVISION="$GITHUB_SHA" --build-arg MEDIA_JOBS=4 -t llm-canvas-headless:validation .
+      - name: Verify isolated first start and paired media
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name llm-canvas-headless-validation -p 127.0.0.1:4250:4250 -e AUTH_URL=http://127.0.0.1:4250 llm-canvas-headless:validation
+          trap 'docker rm -f llm-canvas-headless-validation >/dev/null 2>&1 || true' EXIT
+          healthy=false
+          for attempt in $(seq 1 90); do
+            if curl --fail --silent http://127.0.0.1:4250/api/health > headless-health.json; then healthy=true; break; fi
+            sleep 1
+          done
+          test "$healthy" = true
+          docker exec llm-canvas-headless-validation sh -c '"$FFMPEG_PATH" -version && "$FFPROBE_PATH" -version' > headless-media.txt
+          docker exec llm-canvas-headless-validation test -s /app/media-tools/media-sources.tar.xz
+          docker exec llm-canvas-headless-validation sh -c 'test ! -e /app/node_modules/ffmpeg-static && test ! -e /app/node_modules/ffprobe-static'
+      - name: Verify native Alpine storage lock and process-death behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --target builder -t llm-canvas-headless-builder:validation .
+          docker run --rm --network none --entrypoint node --mount "type=bind,src=$PWD/tests,dst=/app/tests,readonly" llm-canvas-headless-builder:validation --test tests/storageLock.test.js | tee headless-storage-locks.tap
+      - name: Upload headless validation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: headless-validation
+          path: |
+            headless-health.json
+            headless-media.txt
+            headless-storage-locks.tap
+      - name: Export and inspect the validated headless image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker save llm-canvas-headless:validation -o headless-image.tar
+          python3 ops/check-image-layers.py < headless-image.tar > headless-image-privacy.json
+          gzip -1 headless-image.tar
+          sha256sum headless-image.tar.gz > headless-image.sha256
+      - name: Retain private headless deployment candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: headless-runtime-image
+          path: |
+            headless-image.tar.gz
+            headless-image.sha256
+            headless-image-privacy.json
+          if-no-files-found: error
+          retention-days: 7
