@@ -181,7 +181,7 @@ async function packageStaged(staged, output, unpacked = false, prepackaged, sele
   return build({ projectDir: staged.app, prepackaged, targets: platform.createTarget(unpacked ? ['dir'] : selectedTargets || targets, architecture), publish: 'never', config: {
     appId: 'io.github.dannychirkov.llm-canvas', productName: 'LLM Canvas', electronVersion: require('electron/package.json').version,
     directories: { app: staged.app, output },
-    files: ['desktop/main.cjs', 'desktop/backend.cjs', 'desktop/profile.cjs', 'desktop/runtime.cjs', 'desktop/window-policy.cjs', 'LICENSE', 'package.json'],
+    files: ['desktop/main.cjs', 'desktop/backend.cjs', 'desktop/profile.cjs', 'desktop/runtime.cjs', 'desktop/window-policy.cjs', 'desktop/updates.cjs', 'LICENSE', 'package.json'],
     extraResources: resourceMappings(staged.server),
     afterPack: async context => {
       verifyServer(path.join(context.packager.getResourcesDir(context.appOutDir), 'server'))

@@ -201,6 +201,7 @@ test('launch environment keeps real OS identity and external keyring but drops s
     HOME: '/runner', DISPLAY: ':99', DBUS_SESSION_BUS_ADDRESS: 'unix:path=/private-bus', XDG_DATA_HOME: '/private-keyring',
     AUTH_SECRET: 'do-not-inherit', DATABASE_URL: 'file:live.db', NODE_OPTIONS: '--require=inject.cjs', ELECTRON_RUN_AS_NODE: '1',
     ELECTRON_DISABLE_SANDBOX: '1', LLM_CANVAS_DESKTOP_SERVER: '/unpackaged', XDG_CONFIG_HOME: '/personal', PROVIDER_API_KEY: 'secret',
+    LLM_CANVAS_DISABLE_UPDATE_CHECKS: '0',
   })
   assert.equal(env.USERPROFILE, 'C:\\Users\\runner')
   assert.equal(env.SystemRoot, 'C:\\Windows')
@@ -209,5 +210,6 @@ test('launch environment keeps real OS identity and external keyring but drops s
   assert.equal(env.XDG_DATA_HOME, '/private-keyring')
   assert.equal(env.XDG_CONFIG_HOME, path.join('/isolated', 'xdg-config'))
   assert.equal(env.LLM_CANVAS_PROFILE, '/isolated')
+  assert.equal(env.LLM_CANVAS_DISABLE_UPDATE_CHECKS, '1')
   for (const key of ['AUTH_SECRET', 'DATABASE_URL', 'NODE_OPTIONS', 'ELECTRON_RUN_AS_NODE', 'ELECTRON_DISABLE_SANDBOX', 'LLM_CANVAS_DESKTOP_SERVER', 'PROVIDER_API_KEY']) assert.equal(env[key], undefined)
 })

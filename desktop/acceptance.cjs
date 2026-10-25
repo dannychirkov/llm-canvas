@@ -170,6 +170,7 @@ function launchEnvironment(profile, source = process.env) {
   env.XDG_CONFIG_HOME = path.join(profile, 'xdg-config')
   env.LLM_CANVAS_PROFILE = profile
   env.NEXT_TELEMETRY_DISABLED = '1'
+  env.LLM_CANVAS_DISABLE_UPDATE_CHECKS = '1'
   return env
 }
 

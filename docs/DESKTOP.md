@@ -98,7 +98,35 @@ Settings → Privacy & Security → Open Anyway** if you trust the verified down
 See [Apple's instructions](https://support.apple.com/102445). Managed OS policies
 may prevent exceptions. Do not disable system protections or Chromium sandboxing.
 The native CI checks do not simulate these downloaded-file reputation/quarantine
-prompts. Automatic updates and trusted signing are not configured in this RC.
+prompts. Trusted signing is not configured in this RC.
+
+## Update notifications
+
+RC5 has no update checker: users on `0.1.0-rc.5` must download and manually
+install a newer desktop release once to gain update notifications.
+
+Builds with the checker offer **Help → Check for Updates…** and check automatically
+30 seconds after packaged startup, then every six hours. Native dialogs also
+work in the unsigned macOS preview. Checks use only the public GitHub releases
+feed for `dannychirkov/llm-canvas`: prerelease apps include RC releases (up to
+100 releases from the feed are inspected); stable apps use GitHub's latest stable
+release. The newest compatible newer SemVer release in that feed offers a Windows
+x64 NSIS installer, macOS arm64 DMG, or Linux x64 AppImage for the running platform.
+Automatic failures stay silent, and each available version prompts at most once
+per application process. Manual checks report failures or missing installers.
+Completed results, including failures, are reused for 60 seconds to limit requests.
+
+**Download update** opens the matching GitHub asset in your browser. Quit the app
+and install the downloaded release manually over the existing installation;
+the local profile, accounts, canvases and encrypted credentials persist when
+using the same OS account/keyring and profile. Back up the complete profile
+first as described below. This is a notification and download-link feature,
+not a full automatic updater: it never downloads or installs code itself.
+
+Set `LLM_CANVAS_DISABLE_UPDATE_CHECKS=1` in the launching environment to disable
+automatic checks; the Help menu check remains available. Development launches
+do not check automatically. Native acceptance runs explicitly set this variable
+to keep external release traffic and update dialogs out of deterministic runs.
 
 ## First launch and storage
 

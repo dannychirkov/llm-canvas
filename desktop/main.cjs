@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, session, shell } = require('electron')
+const { app, BrowserWindow, dialog, session, shell, Menu, net } = require('electron')
 const { fork } = require('node:child_process')
 const path = require('node:path')
 const fs = require('node:fs/promises')
@@ -6,6 +6,7 @@ const { safeStorage } = require('electron')
 const { loadAuthSecret } = require('./profile.cjs')
 const { claimProfile, prepareRuntime } = require('./runtime.cjs')
 const { installWindowPolicy } = require('./window-policy.cjs')
+const { createUpdateChecker } = require('./updates.cjs')
 
 app.setName('LLM Canvas')
 app.enableSandbox()
@@ -16,7 +17,7 @@ if (process.env.LLM_CANVAS_PROFILE) {
 }
 if (!app.requestSingleInstanceLock()) { app.quit() }
 else {
-  let window, child, heartbeat, lease, quitting = false
+  let window, child, heartbeat, lease, updates, quitting = false
   let phase = 'initialization'
   app.on('second-instance', () => { if (window) { window.restore(); window.focus() } })
   app.on('window-all-closed', () => app.quit())
@@ -24,6 +25,7 @@ else {
     if (quitting) return
     event.preventDefault()
     quitting = true
+    updates?.stop()
     clearInterval(heartbeat)
     const done = async () => {
       if (lease) await lease.release().catch(() => {})
@@ -117,8 +119,20 @@ else {
     phase = 'window startup'
     window = new BrowserWindow({ width: 1440, height: 950, minWidth: 960, minHeight: 640, show: false, title: 'LLM Canvas', webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, devTools: !app.isPackaged } })
     installWindowPolicy(session.defaultSession, window, origin, url => shell.openExternal(url), app.isPackaged)
+    updates = createUpdateChecker({ version: app.getVersion(), isPackaged: app.isPackaged,
+      fetch: (url, options) => net.fetch(url, options),
+      showMessageBox: options => dialog.showMessageBox(window, options),
+      openExternal: url => shell.openExternal(url) })
+    const menu = Menu.buildFromTemplate([
+      ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : [{ label: 'File', submenu: [{ role: 'quit' }] }]),
+      { role: 'editMenu' }, { role: 'windowMenu' },
+      { role: 'help', submenu: [{ label: 'Check for Updates…', click: () => { void updates.check({ manual: true }) } }] },
+    ])
+    Menu.setApplicationMenu(menu)
+    if (process.platform !== 'darwin') window.setMenu(menu)
     window.once('ready-to-show', () => window.show())
     await window.loadURL(origin)
+    if (!quitting) updates.start()
   }).catch(error => {
     // Startup never executes providers. Bound OS/loader diagnostics and redact
     // the installation secret's format before writing the private debug log.

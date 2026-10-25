@@ -19,6 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       JOBS: '4'
+      LLM_CANVAS_DISABLE_UPDATE_CHECKS: '1'
     defaults:
       run:
         shell: bash
@@ -40,6 +41,8 @@ jobs:
       - run: npm ci
       - run: npx --no-install prisma generate
       - run: npm run lint
+      - name: Test desktop update notifications without network access
+        run: node --test tests/desktopUpdates.test.js
       - name: Test desktop orchestration, profile and platform paths
         run: |
           set -o pipefail

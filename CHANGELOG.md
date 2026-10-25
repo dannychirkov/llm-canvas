@@ -4,6 +4,12 @@
 
 Changes after the release-candidate baseline will be recorded here. A version bump does not publish a release or establish release readiness.
 
+## 0.1.0-rc.6 — 2026-10-25
+
+- Add desktop release checks and a Help → Check for Updates command. A newer compatible installer opens only after confirmation; installation remains manual and preserves the local profile.
+- Keep update requests bounded, use the official release repository, and keep preview/stable channels separate. Automatic checks can be disabled for offline use.
+- Restore the README's visual introduction, add fresh synthetic application screenshots and a gallery, and describe concrete sponsorship opportunities without unverified payment links.
+
 ## 0.1.0-rc.5 — 2026-10-25
 
 - Add Custom endpoint to initial provider setup, using the same form and protocols as provider settings: model discovery/manual models, context overrides, Responses, local servers and ComfyUI workflows.

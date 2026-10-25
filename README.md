@@ -1,10 +1,28 @@
 # LLM Canvas
 
-A self-hosted visual workspace for conversations and workflows with language models. Put prompts, model replies, files and summaries on a canvas; connect them to control what the next model receives. Branch a conversation, compare providers, and combine results without copying between chats.
+**Conversations branch. Your workspace should too.**
 
-**Version 0.1.0-rc.5 provides Windows, macOS and Linux desktop previews plus a headless server.** Interfaces and export formats may change before a stable release. Review the [changelog](CHANGELOG.md) and keep backups when upgrading.
+A visual workspace for working with language models. Put a question on the canvas, explore it with different models, and connect their replies to the next step. Keep the prompts, files and results together instead of copying between chats.
 
-Licensed under [Apache 2.0](LICENSE).
+[Download desktop previews](https://github.com/dannychirkov/llm-canvas/releases) · [Self-host with Docker](#run-with-docker) · [Screenshots](docs/SCREENSHOTS.md) · [Support the project](#support-and-sponsorship)
+
+![A demonstration canvas with connected prompts, parallel model replies and a shared conclusion](docs/images/canvas-demo.png)
+
+*One question, several perspectives, a connected result. This screenshot uses a synthetic example; see the [gallery](docs/SCREENSHOTS.md) for details.*
+
+Windows, macOS and Linux desktop previews share the same core as the headless server. Bring your own provider credentials or connect a local model server. Licensed under [Apache 2.0](LICENSE).
+
+**Current release: 0.1.0-rc.5.** This is a preview: interfaces and export formats may change before a stable release. Read the [changelog](CHANGELOG.md) and keep backups when upgrading.
+
+## Why a canvas?
+
+A linear chat is useful until you want to explore two ideas at once, compare models, or bring earlier answers back into a new question. LLM Canvas makes those paths visible.
+
+- **Explore a question from several angles.** Branch into research, tradeoffs and implementation, then feed those replies into a shared conclusion.
+- **Compare prompts and models.** Give two model nodes the same source material and keep their answers beside each other.
+- **Control what travels downstream.** Connect the prompts, replies and attachments a model should receive, then inspect the assembled context before running it.
+
+An arrow carries context. It does not start an autonomous conversation or rerun a model by itself. **Run Selected** executes selected dependencies in order; saved replies from unselected ancestors can be reused. Read the [graph contract](docs/NODE_COMMUNICATION.md) for the details.
 
 ## What you can do
 
@@ -15,6 +33,19 @@ Licensed under [Apache 2.0](LICENSE).
 - Generate images through Gemini or supported custom image protocols. A model appearing in a model list does not establish image-generation support.
 - Export/import canvas data and media. Provider credentials remain encrypted; keep the installation secret to reuse them on another installation.
 
+## Available nodes
+
+| Node | Use it for |
+| --- | --- |
+| Text | Add a prompt, instruction or source text to a branch. |
+| OpenAI, Gemini, OpenRouter | Run a configured provider's model and keep its reply on the canvas. |
+| Custom endpoint | Use a compatible remote or local endpoint with its own models and supported protocol. |
+| Summarizer | Summarize connected material, including chunked processing for longer input. |
+| Image generation | Generate or edit images with a compatible model or configured ComfyUI workflow. |
+| Media | Attach images, CSV data and supported video inputs. |
+| Memory | Keep reusable text available across the canvas. |
+| Notes | Document the workflow without adding text to model requests. |
+
 ## How the graph works
 
 In `A → B → C`, running B includes connected earlier prompts and available replies, plus B's own instruction. You can select several model nodes and use **Run Selected**: selected dependencies run first, independent branches can run together, and unselected ancestors reuse their saved results. An edge does not start a model automatically when another model finishes.
@@ -23,7 +54,22 @@ Visible Memory values are global to the canvas, even without edges. Notes do not
 
 See [node communication](docs/NODE_COMMUNICATION.md), [tokens, context and caching](docs/TOKENS_AND_CACHING.md) and the [operator notes](docs/OPERATIONS.md) for the execution contract, accounting and recovery limits. Token estimates are approximate and are not provider billing records.
 
-## Desktop or headless server
+## Try it on your desktop
+
+| Platform | Preview package |
+| --- | --- |
+| Windows x64 | NSIS installer (`*-x64-Setup.exe`) |
+| macOS Apple Silicon | Disk image (`*-arm64.dmg`) |
+| Linux x64 | AppImage (`*-x86_64.AppImage`) |
+| Headless server | Docker image archive, or build from source below |
+
+Choose the matching asset in [Releases](https://github.com/dannychirkov/llm-canvas/releases), then follow the [desktop installation guide](docs/DESKTOP.md#install-the-preview). Desktop includes the application runtime; it creates a local profile for your canvases and credentials. You still need a model provider or a reachable local model server.
+
+Windows/macOS previews are unsigned. Read the installation guide before first launch. For a private server or access from several devices, use Docker.
+
+<details>
+<summary>Desktop runtime, sandbox and bundled media tools</summary>
+
 
 The same application core supports desktop packages for Windows, macOS and Linux,
 and a headless Docker server. Desktop starts its own loopback server and creates a
@@ -47,6 +93,8 @@ Sharp/libvips and Electron FFmpeg sources, recipes and notices alongside release
 Desktop media windows inherit the renderer sandbox. Clipboard text writes are
 allowed for owned app windows; reads/device permissions remain denied. CSV
 previews render filenames and contents as text rather than HTML.
+
+</details>
 
 ## Run with Docker
 
@@ -167,8 +215,9 @@ npm run build
 
 Tests use Node's built-in runner with the installed dependencies. Live integration scripts may require an isolated database/uploads copy and can incur provider charges; they are not part of the basic setup.
 
-The rc5 verification checkpoint passes **530 tests: 529 passed, zero failed,
-one host BusyBox check skipped**, with lint/build passing. The Alpine storage
+The RC6 host checkpoint passes **549 tests: 548 passed, zero failed,
+one host BusyBox check skipped**. The last published RC5 installer and server
+results are recorded separately. The Alpine storage
 check passes separately on native Alpine. Installed desktop checks and isolated
 server Chromium/protocol/admission results are recorded in the
 [verification record](docs/RELEASE-VERIFICATION.md).
@@ -176,3 +225,13 @@ server Chromium/protocol/admission results are recorded in the
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes. Report ordinary bugs through the repository's issue tracker with sanitized reproduction steps. For vulnerabilities, use the private channels in [SECURITY.md](SECURITY.md).
 
 The stack is Next.js 16, React 19, TypeScript, React Flow, Prisma 6/SQLite and Auth.js/NextAuth v5 credentials authentication. This release candidate is intended for self-hosting; a broad public service needs its own operational review, monitoring and recovery plan.
+
+## Support and sponsorship
+
+LLM Canvas is an independent open-source project. I am looking for sponsors who want a practical, self-hostable workspace for working with models across providers.
+
+Financial support would help cover maintenance, model/API compatibility testing, native build infrastructure, and desktop code signing and notarization. API credits, test hardware and help with accessibility testing would also be useful.
+
+See [sponsorship and partnership opportunities](docs/SPONSORSHIP.md) for the project pitch and priorities. To discuss support, [open a sponsorship inquiry](https://github.com/dannychirkov/llm-canvas/issues/new?title=Sponsorship%20inquiry). Share only public information; a private contact can be arranged afterward. No payment page is currently configured.
+
+You can also help by trying a release, reporting a reproducible bug, improving the docs, contributing a focused fix, or starring the repository so more people can find it.
