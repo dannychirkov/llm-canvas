@@ -21,7 +21,7 @@ Closes #
 
 ## Checklist
 
-- [ ] I have read the [CONTRIBUTING](CONTRIBUTING.md) guidelines
+- [ ] I have read the [CONTRIBUTING](https://github.com/dannychirkov/llm-canvas/blob/HEAD/CONTRIBUTING.md) guidelines
 - [ ] My code follows the existing style of this project
 - [ ] I have added/updated comments where necessary
 - [ ] I have tested my changes locally

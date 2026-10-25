@@ -37,5 +37,5 @@ async function verifyFrontend(origin, routes = ["/login", "/settings", "/dashboa
 module.exports = { verifyFrontend }
 
 if (require.main === module) {
-  verifyFrontend(process.argv[2] || "https://elena.alai-carob.ts.net:4450").then(result => process.stdout.write(JSON.stringify({ check: "frontend-assets", ...result }) + "\n")).catch(failure => { process.stderr.write(failure.message + "\n"); process.exitCode = 1 })
+  verifyFrontend(process.argv[2] || "http://localhost:4250").then(result => process.stdout.write(JSON.stringify({ check: "frontend-assets", ...result }) + "\n")).catch(failure => { process.stderr.write(failure.message + "\n"); process.exitCode = 1 })
 }
