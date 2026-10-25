@@ -4,10 +4,10 @@ LLM Canvas uses one Next.js/Prisma application in four distributions:
 
 | Distribution | Wrapper | Data location | Verification |
 | --- | --- | --- | --- |
-| Windows | Electron + NSIS installer | `%APPDATA%/LLM Canvas` | rc4 x64 NSIS accepted |
-| macOS | Electron + DMG | `~/Library/Application Support/LLM Canvas` | rc4 arm64 DMG accepted |
-| Linux | Electron + AppImage / tar.gz | `${XDG_CONFIG_HOME:-~/.config}/LLM Canvas` | rc4 x64 AppImage accepted |
-| Headless server | Docker / Node.js | Operator-managed SQLite and uploads | rc4 native Alpine image accepted; no graphical session required |
+| Windows | Electron + NSIS installer | `%APPDATA%/LLM Canvas` | rc5 x64 NSIS accepted |
+| macOS | Electron + DMG | `~/Library/Application Support/LLM Canvas` | rc5 arm64 DMG accepted |
+| Linux | Electron + AppImage / tar.gz | `${XDG_CONFIG_HOME:-~/.config}/LLM Canvas` | rc5 x64 AppImage accepted |
+| Headless server | Docker / Node.js | Operator-managed SQLite and uploads | rc5 native Alpine image accepted; no graphical session required |
 
 Desktop includes Chromium, Node.js, the compiled application, native Prisma and
 media tools. It does not install or generate packages at startup. Models still
@@ -47,8 +47,8 @@ The **Native desktop acceptance** workflow builds on Windows, macOS and Linux,
 then checks the actual installer payload before uploading accepted artifacts.
 It supports manual dispatch and pushes to isolated private validation branches
 matching `feat/desktop-release-validation-*`; it does not publish releases.
-The rc4 native checks pass on all three systems. Host gates pass522 tests
-(521 passed, zero failed, one separately covered Alpine-only skip), lint and build.
+The rc5 native checks pass on all three systems. Host gates pass530 tests
+(529 passed, zero failed, one separately covered Alpine-only skip), lint and build.
 See [RELEASE-VERIFICATION.md](RELEASE-VERIFICATION.md) for actual artifact hashes,
 checks and the explicit Windows CI occlusion workaround. These results do not
 establish trusted signing or quarantined OS first launch.

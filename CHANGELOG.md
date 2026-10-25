@@ -9,6 +9,7 @@ Changes after the release-candidate baseline will be recorded here. A version bu
 - Add Custom endpoint to initial provider setup, using the same form and protocols as provider settings: model discovery/manual models, context overrides, Responses, local servers and ComfyUI workflows.
 - Keep setup open while connection discovery refreshes settings; retain one endpoint ID and draft when returning to provider selection. Finish only after models and required credentials/workflow are configured.
 - Preserve retryable save/discovery failures and invalidate built-in key validation after changing a key/provider.
+- Pass530 host tests (529 passed, zero failed, one separately covered Alpine skip), lint/build, all three native installers and the fresh headless image. Real Chromium verifies first-run discovery/model selection/Finish and saved-key execution; headless rollout preserves existing data and credentials.
 
 ## 0.1.0-rc.4 — 2026-10-25
 

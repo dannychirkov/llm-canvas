@@ -167,7 +167,7 @@ npm run build
 
 Tests use Node's built-in runner with the installed dependencies. Live integration scripts may require an isolated database/uploads copy and can incur provider charges; they are not part of the basic setup.
 
-The rc4 verification checkpoint passes **522 tests: 521 passed, zero failed,
+The rc5 verification checkpoint passes **530 tests: 529 passed, zero failed,
 one host BusyBox check skipped**, with lint/build passing. The Alpine storage
 check passes separately on native Alpine. Installed desktop checks and isolated
 server Chromium/protocol/admission results are recorded in the

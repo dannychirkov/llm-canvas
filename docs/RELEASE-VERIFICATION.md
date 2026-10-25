@@ -1,29 +1,29 @@
-# RC4 verification record
+# RC5 verification record
 
-Version **0.1.0-rc.4**, 25 October 2026. One Next.js/Prisma core, three native
+Version **0.1.0-rc.5**, 25 October 2026. One Next.js/Prisma core, three native
 desktop distributions and a headless server. This record describes measured
 acceptance; it does not establish support on every OS version or a security
 certification.
 
 ## Accepted binary identity
 
-The binaries were built from the history-free source revision
-`40b3663b117c97351e2fbf879bbaae547195e590`. Later release-tooling, documentation
+The binaries were built from the clean application source revision
+`738c0d5d6c5a6f76b351d3f879f70a5bef7c4c4e`. Later release-tooling, documentation
 and test-harness changes do not change those application or packaging inputs.
 Rechecking the installers compares Git blob hashes and modes of all build/runtime
 inputs to the original native build and checks the original installer checksum.
-The exact358-file build-source archive has SHA-256
-`4b36f78c3e491929127bb69849dcee43016b70facf8dc2fefd0bc156abb7eaf4`.
+The exact367-file build-source archive has SHA-256
+`89396ce9da31290cd3e0e637bcb58ff83a97262785a125b8ac2070601e91dfcc`.
 
 | Target | Accepted artifact | SHA-256 |
 | --- | --- | --- |
-| Windows x64 | `LLM-Canvas-0.1.0-rc.4-x64-Setup.exe` | `99c4bd5be79a44f5b134cbc3e71553fcad54e903005ecabaa24d6814f153be95` |
-| macOS arm64 | `LLM-Canvas-0.1.0-rc.4-arm64.dmg` | `ec0064747c9db71218b9b3dbed6de3df75edc40a694bb3c45fba4b8abe0e70f5` |
-| Linux x64 | `LLM-Canvas-0.1.0-rc.4-x86_64.AppImage` | `56eff7b467827879267f78896934745fe0fec93213c6d22aa80deba3fa7fbc7b` |
-| Headless Linux x64 | `headless-image.tar.gz` | `11b087d16b08447588be9077342b684c667ecfe3033620ecb6d6f0367dc8e8b5` |
+| Windows x64 | `LLM-Canvas-0.1.0-rc.5-x64-Setup.exe` | `fb14220d70761c8efca4ff16230de373581c0e3ae9b64a6082b4406a95977400` |
+| macOS arm64 | `LLM-Canvas-0.1.0-rc.5-arm64.dmg` | `c28832a8e140a2b35ce6608d392184510058e13eaf3bd8e645b6831c0fa322b8` |
+| Linux x64 | `LLM-Canvas-0.1.0-rc.5-x86_64.AppImage` | `9b36784ca297260e7d11fbf5b6bfe94e95227f24cd3e55729209be9ed8d2341f` |
+| Headless Linux x64 | `headless-image.tar.gz` | `a60ad4b5897e5a34749f1019f2aea2c9551153c1c79899ade5826e7159a54748` |
 
 The headless image ID is
-`sha256:7f34c20572d7aada9772786e102aa6a6ee2826cefaca28188beb5022bbce7f98`.
+`sha256:ab6d817570b8caf8ab26d05b89c59a69f55ae72c3bfb037583319135bcd86ac4`.
 Load its Docker archive with `docker load --input headless-image.tar.gz`;
 its loaded tag is `llm-canvas-headless:validation`. Review the
 [operations guide](OPERATIONS.md) before connecting persistent data. The image
@@ -47,7 +47,7 @@ Chromium renderer isolation. No real provider account or paid inference is used.
 | Chat/SSE,18 tokens/call,3 cached,2 reasoning,36 ledger delta | Pass | Pass | Pass |
 | Clipboard write/read denied; renderer has no Node | Pass | Pass | Pass |
 | Native paired FFmpeg/FFprobe9.0.2 WAV and standard-Node Sharp PNG | Pass | Pass | Pass |
-| Main-process death: orphan backend stopped | 110ms | 101ms | 102ms |
+| Main-process death: orphan backend stopped | 105ms | 104ms | 101ms |
 | Backend death: resume after explicit modal-main cleanup | Pass | Pass | Pass |
 
 Native media builds additionally pass metadata/JPEG/frame extraction on six
@@ -70,13 +70,17 @@ builds, automatic updates and trusted code signing are not provided in this RC.
 
 ## Core/server checks
 
-Host Node22.23.4:522 tests,521 pass,zero fail,one Alpine-only skip. Lint,
+Eight mounted-React onboarding regressions pass, including local no-auth, manual
+models, back/retry identity, ComfyUI workflow and edited built-in key validation.
+
+Host Node22.23.4:530 tests,529 pass,zero fail,one Alpine-only skip. Lint,
 TypeScript and all33 build pages pass. Real native Alpine storage/SIGKILL checks
 cover that host skip. Later validation-only changes pass their focused regressions.
 
 A fresh native candidate on a consistent private persistence copy passes:
 
-- Real Chromium: login, provider/model setup, inspector edit, Undo, connected
+- Real Chromium: login, initial Custom endpoint wizard, discovery, actual model
+  selection modal, Finish with the saved Bearer key, inspector edit, Undo, connected
   selected dependency execution with fresh upstream response, Restore, Save/reload,
   token ledger and logout; zero page/console/asset errors or RSC404.
 - Actual Responses JSON/SSE/vision, output-limit translation and `store:false`;
