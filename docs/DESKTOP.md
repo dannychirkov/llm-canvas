@@ -79,15 +79,15 @@ release record; it is not a publisher signature.
 
 | System | Asset | Installation |
 | --- | --- | --- |
-| Windows x64 | `LLM-Canvas-0.1.0-rc.4-x64-Setup.exe` | Run the NSIS installer as your regular account, then open LLM Canvas. |
-| macOS Apple silicon | `LLM-Canvas-0.1.0-rc.4-arm64.dmg` | Open the DMG, copy LLM Canvas to Applications, then open the copied app. Intel Macs are not an accepted target for this RC. |
-| Linux x64 | `LLM-Canvas-0.1.0-rc.4-x86_64.AppImage` | Make it executable and run it with an unlocked supported system keyring. |
+| Windows x64 | `LLM-Canvas-0.1.0-rc.5-x64-Setup.exe` | Run the NSIS installer as your regular account, then open LLM Canvas. |
+| macOS Apple silicon | `LLM-Canvas-0.1.0-rc.5-arm64.dmg` | Open the DMG, copy LLM Canvas to Applications, then open the copied app. Intel Macs are not an accepted target for this RC. |
+| Linux x64 | `LLM-Canvas-0.1.0-rc.5-x86_64.AppImage` | Make it executable and run it with an unlocked supported system keyring. |
 
 ```sh
-chmod +x LLM-Canvas-0.1.0-rc.4-x86_64.AppImage
-./LLM-Canvas-0.1.0-rc.4-x86_64.AppImage
+chmod +x LLM-Canvas-0.1.0-rc.5-x86_64.AppImage
+./LLM-Canvas-0.1.0-rc.5-x86_64.AppImage
 # Without FUSE:
-./LLM-Canvas-0.1.0-rc.4-x86_64.AppImage --appimage-extract-and-run
+./LLM-Canvas-0.1.0-rc.5-x86_64.AppImage --appimage-extract-and-run
 ```
 
 Unsigned Windows downloads may show an unknown-publisher/SmartScreen prompt;

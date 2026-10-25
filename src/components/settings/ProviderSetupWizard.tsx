@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,24 +16,27 @@ import {
   Eye, 
   EyeOff, 
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Plug
 } from "lucide-react"
 import { OpenAI, Gemini, OpenRouter } from "@lobehub/icons"
 import ModelDualListSelector, { ModelInfo } from "./ModelDualListSelector"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Info } from "lucide-react"
+import { CustomEndpointCard } from "./CustomProviderSettings"
 import { DEFAULT_MODELS, type ProviderKey } from "@/lib/providerConstants"
 
 interface ProviderSetupWizardProps {
   onComplete: () => void
   onSkip: () => void
+  onStart?: () => void
 }
 
 const PROVIDERS = [
   {
     key: "openai" as ProviderKey,
     name: "OpenAI",
-    description: "GPT-4, GPT-3.5, and other OpenAI models",
+    description: "Chat and image models from OpenAI",
     icon: <OpenAI size={30} />,
     color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
     apiKeyUrl: "https://platform.openai.com/api-keys"
@@ -53,12 +56,20 @@ const PROVIDERS = [
     icon: <OpenRouter size={30} />,
     color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
     apiKeyUrl: "https://openrouter.ai/keys"
+  },
+  {
+    key: "custom" as const,
+    name: "Custom endpoint",
+    description: "Connect OmniRoute, Ollama, LM Studio, an OpenAI-compatible API, or ComfyUI",
+    icon: <Plug className="h-[30px] w-[30px]" />,
+    color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+    apiKeyUrl: undefined
   }
 ]
 
-export default function ProviderSetupWizard({ onComplete, onSkip }: ProviderSetupWizardProps) {
+export default function ProviderSetupWizard({ onComplete, onSkip, onStart }: ProviderSetupWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
-  const [selectedProvider, setSelectedProvider] = useState<ProviderKey | null>(null)
+  const [selectedProvider, setSelectedProvider] = useState<ProviderKey | "custom" | null>(null)
   const [apiKey, setApiKey] = useState("")
   const [showKey, setShowKey] = useState(false)
   const [testing, setTesting] = useState(false)
@@ -70,21 +81,20 @@ export default function ProviderSetupWizard({ onComplete, onSkip }: ProviderSetu
   const [saving, setSaving] = useState(false)
   const [useAdvancedOptions, setUseAdvancedOptions] = useState(false)
 
-  const totalSteps = 3
+  const customSetup = selectedProvider === "custom"
+  const totalSteps = customSetup ? 2 : 3
   const progress = ((currentStep - 1) / (totalSteps - 1)) * 100
 
   // Memoized calculation of validDefaultModels
   const validDefaultModels = useMemo(() => {
-    if (!selectedProvider) return []
+    if (!selectedProvider || selectedProvider === "custom") return []
     const defaultModels = DEFAULT_MODELS[selectedProvider] || []
     const availableModelIds = availableModels.map(m => m.id)
     return defaultModels.filter(m => availableModelIds.includes(m))
   }, [selectedProvider, availableModels])
 
-  // Clear models warning when provider changes
-
   const handleTestKey = async () => {
-    if (!apiKey.trim() || !selectedProvider) return
+    if (!apiKey.trim() || !selectedProvider || selectedProvider === "custom") return
     
     setTesting(true)
     setKeyError(null)
@@ -147,7 +157,7 @@ export default function ProviderSetupWizard({ onComplete, onSkip }: ProviderSetu
   }
 
   const handleFinish = async () => {
-    if (!selectedProvider || !apiKey.trim()) return
+    if (!selectedProvider || selectedProvider === "custom" || !apiKey.trim()) return
     
     // If Advanced Options not selected, use default models
     let modelsToSave = selectedModels
@@ -216,7 +226,19 @@ export default function ProviderSetupWizard({ onComplete, onSkip }: ProviderSetu
                 ? "ring-2 ring-primary" 
                 : "hover:ring-1 hover:ring-border"
             }`}
-            onClick={() => { setSelectedProvider(provider.key); setModelsWarning(null) }}
+            onClick={() => {
+              onStart?.()
+              if (selectedProvider === provider.key) return
+              setSelectedProvider(provider.key)
+              setApiKey("")
+              setShowKey(false)
+              setKeyValid(undefined)
+              setKeyError(null)
+              setModelsWarning(null)
+              setAvailableModels([])
+              setSelectedModels([])
+              setUseAdvancedOptions(false)
+            }}
           >
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -253,7 +275,8 @@ export default function ProviderSetupWizard({ onComplete, onSkip }: ProviderSetu
           <div className="flex gap-2">
             <Input
               value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(e) => { setApiKey(e.target.value); setKeyValid(undefined); setKeyError(null); setAvailableModels([]); setSelectedModels([]) }}
+              disabled={testing || saving}
               placeholder="Enter your API key"
               type={showKey ? "text" : "password"}
               autoComplete={showKey ? "off" : "new-password"}
@@ -408,7 +431,7 @@ export default function ProviderSetupWizard({ onComplete, onSkip }: ProviderSetu
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">Setup Your First AI Provider</CardTitle>
-            <Button variant="ghost" onClick={onSkip}>
+            <Button variant="ghost" disabled={testing || saving} onClick={onSkip}>
               Skip Wizard
             </Button>
           </div>
@@ -425,14 +448,23 @@ export default function ProviderSetupWizard({ onComplete, onSkip }: ProviderSetu
       
       <CardContent className="space-y-6">
         {currentStep === 1 && renderStep1()}
-        {currentStep === 2 && renderStep2()}
+        {customSetup && (
+          <div className="space-y-6" hidden={currentStep !== 2}>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-2">Configure Your Endpoint</h2>
+              <p className="text-muted-foreground">Connect your provider, then select models or enter model IDs manually.</p>
+            </div>
+            <CustomEndpointCard setup onSaved={() => onComplete()} onCancel={handlePrevious} onBusyChange={setSaving} />
+          </div>
+        )}
+        {currentStep === 2 && !customSetup && renderStep2()}
         {currentStep === 3 && renderStep3()}
         
-        <div className="flex justify-between pt-6 border-t">
+        {!(customSetup && currentStep === 2) && <div className="flex justify-between pt-6 border-t">
           <Button
             variant="outline"
             onClick={handlePrevious}
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || testing || saving}
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Previous
@@ -471,7 +503,7 @@ export default function ProviderSetupWizard({ onComplete, onSkip }: ProviderSetu
               </Button>
             )}
           </div>
-        </div>
+        </div>}
       </CardContent>
     </Card>
   )

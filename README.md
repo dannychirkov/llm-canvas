@@ -2,7 +2,7 @@
 
 A self-hosted visual workspace for conversations and workflows with language models. Put prompts, model replies, files and summaries on a canvas; connect them to control what the next model receives. Branch a conversation, compare providers, and combine results without copying between chats.
 
-**Version 0.1.0-rc.4 provides Windows, macOS and Linux desktop previews plus a headless server.** Interfaces and export formats may change before a stable release. Review the [changelog](CHANGELOG.md) and keep backups when upgrading.
+**Version 0.1.0-rc.5 provides Windows, macOS and Linux desktop previews plus a headless server.** Interfaces and export formats may change before a stable release. Review the [changelog](CHANGELOG.md) and keep backups when upgrading.
 
 Licensed under [Apache 2.0](LICENSE).
 

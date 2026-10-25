@@ -16,7 +16,17 @@ const emptyForm = () => ({ label: "", baseUrl: "", apiKey: "", apiType: "openai-
 const initialForm = (endpoint?: SafeCustomEndpoint) => endpoint ? { ...emptyForm(), label: endpoint.label, baseUrl: endpoint.baseUrl, apiType: endpoint.apiType ?? "openai-compatible", chatApi: endpoint.chatApi ?? "chat-completions", authStyle: endpoint.authStyle, models: endpoint.models, contextWindow: endpoint.contextWindow, modelContextWindows: endpoint.modelContextWindows ?? {} } : emptyForm()
 const initialModels = (endpoint?: SafeCustomEndpoint): ModelInfo[] => [...new Set([...(endpoint?.models ?? []), ...Object.keys(endpoint?.discoveredModelContextWindows ?? {})])].map(id => ({ id, contextWindow: endpoint?.discoveredModelContextWindows?.[id] ?? 0 }))
 
-function CustomEndpointCard({ endpoint, onSaved, onCancel }: { endpoint?: SafeCustomEndpoint; onSaved: (notice?: string) => void; onCancel?: () => void }) {
+interface CustomEndpointCardProps {
+  endpoint?: SafeCustomEndpoint
+  onSaved: (notice?: string) => void
+  onCancel?: () => void
+  setup?: boolean
+  onBusyChange?: (busy: boolean) => void
+}
+
+export function CustomEndpointCard({ endpoint: configuredEndpoint, onSaved, onCancel, setup = false, onBusyChange }: CustomEndpointCardProps) {
+  const [createdEndpoint, setCreatedEndpoint] = useState<SafeCustomEndpoint>()
+  const endpoint = configuredEndpoint ?? createdEndpoint
   const settings = useSettings()
   const fieldId = useId()
   const [open, setOpen] = useState(!endpoint)
@@ -31,9 +41,10 @@ function CustomEndpointCard({ endpoint, onSaved, onCancel }: { endpoint?: SafeCu
 
   async function action(callback: () => Promise<void>) {
     setBusy(true)
+    onBusyChange?.(true)
     setError("")
     setMessage("")
-    try { await callback() } catch (failure) { setError(failure instanceof Error ? failure.message : "Request failed") } finally { setBusy(false) }
+    try { await callback() } catch (failure) { setError(failure instanceof Error ? failure.message : "Request failed") } finally { setBusy(false); onBusyChange?.(false) }
   }
 
   async function persist(selected = form.models): Promise<SafeCustomEndpoint> {
@@ -48,6 +59,7 @@ function CustomEndpointCard({ endpoint, onSaved, onCancel }: { endpoint?: SafeCu
     const response = await fetch("/api/providers/custom", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, id: endpoint?.id, models: selected, headers, workflow }) })
     const result = await response.json()
     if (!response.ok) throw new Error(result.error || "Failed to save provider")
+    if (!configuredEndpoint) setCreatedEndpoint(result)
     setForm(previous => ({ ...previous, apiKey: "", headers: "", workflow: "", clearWorkflow: false, models: result.models, baseUrl: result.baseUrl }))
     return result
   }
@@ -63,6 +75,7 @@ function CustomEndpointCard({ endpoint, onSaved, onCancel }: { endpoint?: SafeCu
   }
 
   function changeOpen(value: boolean) {
+    if (setup) return
     setOpen(value)
     setShowKey(false)
     setError("")
@@ -78,6 +91,10 @@ function CustomEndpointCard({ endpoint, onSaved, onCancel }: { endpoint?: SafeCu
   }
 
   async function saveModels(selected: string[]) {
+    if (setup) {
+      setForm(previous => ({ ...previous, models: selected }))
+      return
+    }
     setBusy(true)
     setError("")
     try {
@@ -92,6 +109,9 @@ function CustomEndpointCard({ endpoint, onSaved, onCancel }: { endpoint?: SafeCu
 
   const allModels = [...new Map([...models, ...form.models.filter(id => !models.some(model => model.id === id)).map(id => ({ id, contextWindow: 0 }))].map(model => [model.id, model])).values()]
   const configured = !!endpoint && (endpoint.hasKey || endpoint.authStyle === "none")
+  const readyForSetup = form.models.length > 0
+    && (form.authStyle === "none" || Boolean(form.apiKey.trim() || endpoint?.hasKey))
+    && (form.apiType !== "comfyui" || (!form.clearWorkflow && Boolean(form.workflow.trim() || endpoint?.hasWorkflow)))
 
   return (
     <>
@@ -117,11 +137,11 @@ function CustomEndpointCard({ endpoint, onSaved, onCancel }: { endpoint?: SafeCu
                 const saved = await persist()
                 let notice: string | undefined
                 try { await check(saved.id) } catch (failure) {
-                  if (endpoint) throw failure
+                  if (endpoint || setup) throw failure
                   notice = failure instanceof Error ? failure.message : "Connection failed; edit the saved provider to retry or enter models manually"
                 }
                 await settings.refresh()
-                if (!endpoint) onSaved(notice)
+                if (!endpoint && !setup) onSaved(notice)
               })}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Test Connection"}</Button>
             </div>
             <p className="text-xs text-muted-foreground">{form.apiType === "comfyui" ? "ComfyUI workflow API." : "OpenAI-compatible API."} Stored keys remain on the server.</p>
@@ -160,12 +180,12 @@ function CustomEndpointCard({ endpoint, onSaved, onCancel }: { endpoint?: SafeCu
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           {message && <p role="status" className="text-sm text-green-600">{message}</p>}
           <div className="flex gap-2 pt-2">
-            <Button className="flex-1" disabled={busy || !form.label.trim()} onClick={() => action(async () => { await persist(); await settings.refresh(); setOpen(false); onSaved() })}>Save</Button>
-            {endpoint && <Button variant="destructive" disabled={busy} onClick={() => {
+            <Button className="flex-1" disabled={busy || !form.label.trim() || !form.baseUrl.trim() || (setup && !readyForSetup)} onClick={() => action(async () => { await persist(); await settings.refresh(); setOpen(false); onSaved() })}>{setup ? "Finish Setup" : "Save"}</Button>
+            {endpoint && !setup && <Button variant="destructive" disabled={busy} onClick={() => {
               if (!window.confirm(`Delete ${endpoint.label}? Existing nodes will need another provider.`)) return
               action(async () => { const response = await fetch("/api/providers/custom", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: endpoint.id }) }); if (!response.ok) throw new Error("Failed to delete provider"); await settings.refresh() })
             }}>Delete Provider</Button>}
-            <Button variant="outline" onClick={() => changeOpen(false)}>Cancel</Button>
+            <Button variant="outline" disabled={busy} onClick={() => setup ? onCancel?.() : changeOpen(false)}>{setup ? "Previous" : "Cancel"}</Button>
           </div>
         </CardContent>
       </ProviderCardShell>

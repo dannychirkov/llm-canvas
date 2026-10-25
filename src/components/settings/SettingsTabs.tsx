@@ -107,10 +107,10 @@ export default function SettingsTabs({
       {showWizard ? (
         <div className="space-y-6">
           <ProviderSetupWizard
+            onStart={() => setShowWizard(true)}
             onComplete={handleWizardComplete}
             onSkip={handleWizardSkip}
           />
-          <CustomProviderSettings onConfigured={() => setShowWizard(false)} />
         </div>
       ) : (
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">

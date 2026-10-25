@@ -43,7 +43,7 @@ jobs:
       - name: Test desktop orchestration, profile and platform paths
         run: |
           set -o pipefail
-          node --test tests/desktopAcceptance.test.js tests/desktopProfile.test.js tests/desktopRuntime.test.js tests/desktopStorageLock.test.js tests/desktopPackaging.test.js tests/desktopWindowPolicy.test.js tests/csvPreviewSafety.test.js tests/publicPathPlatforms.test.js | tee "$RUNNER_TEMP/desktop-diagnostics/tests.tap"
+          node --test tests/providerSetupWizard.test.js tests/desktopAcceptance.test.js tests/desktopProfile.test.js tests/desktopRuntime.test.js tests/desktopStorageLock.test.js tests/desktopPackaging.test.js tests/desktopWindowPolicy.test.js tests/csvPreviewSafety.test.js tests/publicPathPlatforms.test.js | tee "$RUNNER_TEMP/desktop-diagnostics/tests.tap"
       - name: Provision Linux native media, display and Secret Service dependencies
         if: runner.os == 'Linux'
         run: |
@@ -332,7 +332,7 @@ jobs:
             }
           }
           NODE
-      - name: Retain rejected installers privately for diagnosis
+      - name: Retain rejected installers for diagnosis
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -397,7 +397,7 @@ jobs:
           python3 ops/check-image-layers.py < headless-image.tar > headless-image-privacy.json
           gzip -1 headless-image.tar
           sha256sum headless-image.tar.gz > headless-image.sha256
-      - name: Retain private headless deployment candidate
+      - name: Retain validated headless deployment candidate
         uses: actions/upload-artifact@v4
         with:
           name: headless-runtime-image

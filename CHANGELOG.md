@@ -4,6 +4,12 @@
 
 Changes after the release-candidate baseline will be recorded here. A version bump does not publish a release or establish release readiness.
 
+## 0.1.0-rc.5 — 2026-10-25
+
+- Add Custom endpoint to initial provider setup, using the same form and protocols as provider settings: model discovery/manual models, context overrides, Responses, local servers and ComfyUI workflows.
+- Keep setup open while connection discovery refreshes settings; retain one endpoint ID and draft when returning to provider selection. Finish only after models and required credentials/workflow are configured.
+- Preserve retryable save/discovery failures and invalidate built-in key validation after changing a key/provider.
+
 ## 0.1.0-rc.4 — 2026-10-25
 
 - Pin the build and bundled standard Node.js runtime to 22.23.4 through `.nvmrc`.
