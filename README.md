@@ -2,7 +2,7 @@
 
 A self-hosted visual workspace for conversations and workflows with language models. Put prompts, model replies, files and summaries on a canvas; connect them to control what the next model receives. Branch a conversation, compare providers, and combine results without copying between chats.
 
-**Version 0.1.0-rc.4 prepares native desktop acceptance and controlled media source distribution.** Interfaces and export formats may change before a stable release. Review the [changelog](CHANGELOG.md) and keep backups when upgrading.
+**Version 0.1.0-rc.4 provides Windows, macOS and Linux desktop previews plus a headless server.** Interfaces and export formats may change before a stable release. Review the [changelog](CHANGELOG.md) and keep backups when upgrading.
 
 Licensed under [Apache 2.0](LICENSE).
 
@@ -30,17 +30,19 @@ and a headless Docker server. Desktop starts its own loopback server and creates
 separate local profile with an OS-encrypted secret. Missing that secret beside an
 existing database fails closed. The native workflow checks actual NSIS/DMG/
 AppImage payloads with real OS key storage, four launches and two process-crash
-recoveries. [Run 40143049074](https://github.com/dannychirkov/llm-canvas/actions/runs/40143049074)
-is in progress at the rc4 documentation checkpoint; Windows, macOS and Linux
-acceptance remain pending. Windows/macOS previews are unsigned, with no signing,
-notarization or Gatekeeper acceptance claim.
+recoveries. Native Windows x64, macOS arm64 and Linux x64 acceptance passes;
+see the [verification record](docs/RELEASE-VERIFICATION.md). Windows/macOS
+previews are unsigned; trusted signing, notarization and quarantined Gatekeeper
+first launch are not verified. Download the matching installer from
+[Releases](https://github.com/dannychirkov/llm-canvas/releases) and follow the
+[installation instructions](docs/DESKTOP.md#install-the-preview).
 
 Desktop and Docker ship a controlled FFmpeg/FFprobe 9.0.2 pair with exact retained
 source/build materials, notices and a SHA-256 manifest. The old static npm
 packages are development-only and excluded from runtime distributions. Desktop
 packaging requires `LLM_CANVAS_MEDIA_BUILD`; see the [desktop guide](docs/DESKTOP.md)
-and [media build requirements](docs/MEDIA-NOTICES.md). No public desktop release
-is implied by the version bump.
+and [media build requirements](docs/MEDIA-NOTICES.md). The [native source companion](docs/NATIVE-SOURCE-MATERIALS.md) supplies matching
+Sharp/libvips and Electron FFmpeg sources, recipes and notices alongside releases.
 
 Desktop media windows inherit the renderer sandbox. Clipboard text writes are
 allowed for owned app windows; reads/device permissions remain denied. CSV
@@ -165,9 +167,11 @@ npm run build
 
 Tests use Node's built-in runner with the installed dependencies. Live integration scripts may require an isolated database/uploads copy and can incur provider charges; they are not part of the basic setup.
 
-At the rc4 checkpoint, host gates report **482 tests: 481 passed, zero failed,
-one BusyBox check skipped**, with lint/build passing. Native CI acceptance remains
-pending and is tracked separately in the [desktop guide](docs/DESKTOP.md).
+The rc4 verification checkpoint passes **522 tests: 521 passed, zero failed,
+one host BusyBox check skipped**, with lint/build passing. The Alpine storage
+check passes separately on native Alpine. Installed desktop checks and isolated
+server Chromium/protocol/admission results are recorded in the
+[verification record](docs/RELEASE-VERIFICATION.md).
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes. Report ordinary bugs through the repository's issue tracker with sanitized reproduction steps. For vulnerabilities, use the private channels in [SECURITY.md](SECURITY.md).
 

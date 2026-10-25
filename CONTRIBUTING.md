@@ -4,9 +4,9 @@ Keep discussions respectful and changes focused. For a substantial behavior chan
 
 ## Development setup
 
-Follow the [source setup in README](README.md#run-from-source): use Node.js 22.18+ in the 22.x line, `npm ci`, a private `.env`, a generated authentication secret, and a local database initialized with the packaged migrations. Use synthetic accounts and files for development. Do not point tests or migrations at somebody's live installation.
+Follow the [source setup in README](README.md#run-from-source): use the exact Node.js version pinned in `.nvmrc`, `npm ci`, a private `.env`, a generated authentication secret, and a local database initialized with the packaged migrations. Use synthetic accounts and files for development. Do not point tests or migrations at somebody's live installation.
 
-Create a `feat/*` branch from `develop` for your change. Do not push directly to `master` or `develop`. Keep dependency changes explicit; commit the updated lockfile when they are necessary. Do not include unrelated formatting or generated build output.
+Create a `feat/*` branch from the repository default branch (or `develop` when maintained) for your change. Do not push directly to `master` or `develop`. Keep dependency changes explicit; commit the updated lockfile when they are necessary. Do not include unrelated formatting or generated build output.
 
 ## Implementation guidelines
 

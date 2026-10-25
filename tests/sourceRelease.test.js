@@ -4,7 +4,7 @@ const fs = require("node:fs")
 const path = require("node:path")
 const os = require("node:os")
 const { execFileSync } = require("node:child_process")
-const { sourceRelease } = require("../ops/source-release")
+const { sourceRelease, publishable } = require("../ops/source-release")
 
 function fixture(context) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "llm-canvas-release-test-"))
@@ -56,4 +56,10 @@ test("source release refuses symlinks instead of following private filesystem pa
   fs.symlinkSync("/private/unrelated", path.join(state.repository, "src/link"))
   state.git(["add", "src/link"]); state.git(["commit", "-qm", "unsafe link"])
   assert.throws(() => sourceRelease(path.join(state.root, "output"), "HEAD", state.repository), /must not contain links/)
+})
+
+
+test("native source acquisition, verification and rebuild materials accompany public source", () => {
+  for (const filename of ["ops/native-source-materials.py", "ops/native-source-pins.json", "docs/NATIVE-SOURCE-MATERIALS.md", "docs/RELEASE-VERIFICATION.md"]) assert.equal(publishable(filename), true, filename)
+  for (const filename of ["REPORT-phase32.md", "REPORT-phase33.md", "AGENTS.md", "KICKOFF.md", "ops/promote-artifact.js", "docker.env", "public/canvases/private.png"]) assert.equal(publishable(filename), false, filename)
 })

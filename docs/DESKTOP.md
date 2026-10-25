@@ -4,10 +4,10 @@ LLM Canvas uses one Next.js/Prisma application in four distributions:
 
 | Distribution | Wrapper | Data location | Verification |
 | --- | --- | --- | --- |
-| Windows | Electron + NSIS installer | `%APPDATA%/LLM Canvas` | rc4 native installer acceptance pending |
-| macOS | Electron + DMG | `~/Library/Application Support/LLM Canvas` | rc4 native DMG acceptance pending |
-| Linux | Electron + AppImage / tar.gz | `${XDG_CONFIG_HOME:-~/.config}/LLM Canvas` | rc4 native AppImage acceptance pending |
-| Headless server | Docker / Node.js | Operator-managed SQLite and uploads | Existing web release; no Electron or graphical session required |
+| Windows | Electron + NSIS installer | `%APPDATA%/LLM Canvas` | rc4 x64 NSIS accepted |
+| macOS | Electron + DMG | `~/Library/Application Support/LLM Canvas` | rc4 arm64 DMG accepted |
+| Linux | Electron + AppImage / tar.gz | `${XDG_CONFIG_HOME:-~/.config}/LLM Canvas` | rc4 x64 AppImage accepted |
+| Headless server | Docker / Node.js | Operator-managed SQLite and uploads | rc4 native Alpine image accepted; no graphical session required |
 
 Desktop includes Chromium, Node.js, the compiled application, native Prisma and
 media tools. It does not install or generate packages at startup. Models still
@@ -47,9 +47,11 @@ The **Native desktop acceptance** workflow builds on Windows, macOS and Linux,
 then checks the actual installer payload before uploading accepted artifacts.
 It supports manual dispatch and pushes to isolated private validation branches
 matching `feat/desktop-release-validation-*`; it does not publish releases.
-At the rc4 documentation checkpoint, [run 40143049074](https://github.com/dannychirkov/llm-canvas/actions/runs/40143049074)
-is **in progress**. All three native OS results remain pending. Host gates report
-482 tests: 481 passed, zero failed and one BusyBox check skipped; lint/build pass.
+The rc4 native checks pass on all three systems. Host gates pass522 tests
+(521 passed, zero failed, one separately covered Alpine-only skip), lint and build.
+See [RELEASE-VERIFICATION.md](RELEASE-VERIFICATION.md) for actual artifact hashes,
+checks and the explicit Windows CI occlusion workaround. These results do not
+establish trusted signing or quarantined OS first launch.
 
 For local debugging, first stage a package, then launch:
 
@@ -65,9 +67,38 @@ already include the runtime and do not run it.
 The `--dir` packaging argument builds an unpacked application for testing. Linux
 AppImage needs FUSE; on hosts without it, use `--appimage-extract-and-run` or the
 tar.gz package. Never disable Chromium's sandbox to work around startup errors.
-Windows and macOS previews are unsigned. Native acceptance must include their
-actual first-launch behavior and clear unsigned-package instructions; trusted
-signing/notarization is a distribution option that is not configured here.
+Windows and macOS previews are unsigned. Their actual installation and runtime
+checks pass; trusted signing/notarization and quarantined OS first launch are
+not established by those checks.
+
+## Install the preview
+
+Use the matching asset from [Releases](https://github.com/dannychirkov/llm-canvas/releases).
+Compare its SHA-256 with `SHA256SUMS`. A checksum verifies bytes against that
+release record; it is not a publisher signature.
+
+| System | Asset | Installation |
+| --- | --- | --- |
+| Windows x64 | `LLM-Canvas-0.1.0-rc.4-x64-Setup.exe` | Run the NSIS installer as your regular account, then open LLM Canvas. |
+| macOS Apple silicon | `LLM-Canvas-0.1.0-rc.4-arm64.dmg` | Open the DMG, copy LLM Canvas to Applications, then open the copied app. Intel Macs are not an accepted target for this RC. |
+| Linux x64 | `LLM-Canvas-0.1.0-rc.4-x86_64.AppImage` | Make it executable and run it with an unlocked supported system keyring. |
+
+```sh
+chmod +x LLM-Canvas-0.1.0-rc.4-x86_64.AppImage
+./LLM-Canvas-0.1.0-rc.4-x86_64.AppImage
+# Without FUSE:
+./LLM-Canvas-0.1.0-rc.4-x86_64.AppImage --appimage-extract-and-run
+```
+
+Unsigned Windows downloads may show an unknown-publisher/SmartScreen prompt;
+review the source and checksum before deciding to proceed. See
+[Microsoft's reputation guidance](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation).
+For the unsigned macOS preview, first attempt to open it, then use **System
+Settings → Privacy & Security → Open Anyway** if you trust the verified download.
+See [Apple's instructions](https://support.apple.com/102445). Managed OS policies
+may prevent exceptions. Do not disable system protections or Chromium sandboxing.
+The native CI checks do not simulate these downloaded-file reputation/quarantine
+prompts. Automatic updates and trusted signing are not configured in this RC.
 
 ## First launch and storage
 
@@ -176,9 +207,13 @@ fallbacks. Application code no longer imports their JavaScript wrappers, and
 desktop/Docker runtime packages exclude those legacy GPL static distributions.
 Keep the controlled source bundle and notices with the binaries and beside
 installer downloads. See [MEDIA-NOTICES.md](MEDIA-NOTICES.md) for the exact pins,
-license texts, build requirements and verification limits. Native acceptance and
-the unsigned/signing policy remain distribution gates; rc4 does not publish a
-public desktop release or change the application's Apache-2.0 source license.
+license texts, build requirements and verification limits. The separate
+[native source companion](NATIVE-SOURCE-MATERIALS.md) retains Sharp/libvips and
+Electron Chromium FFmpeg sources, recipes and full published notices for all
+four native environments, including Alpine. Distribute it beside the installers;
+it is separate from the controlled CLI source archive inside each package.
+The application source remains Apache-2.0; bundled third-party components retain
+their own licenses.
 
 For an AppImage-only Linux validation build, append `--appimage` to the packaging
 command; default Linux packaging also creates a tar.gz archive. The packaged

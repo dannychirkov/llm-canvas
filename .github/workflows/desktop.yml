@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   desktop:
@@ -14,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(contains(github.event.head_commit.message, '[windows-only]') && '["windows-latest"]' || '["ubuntu-latest","windows-latest","macos-latest"]') }}
+        os: ${{ fromJSON(contains(github.event.head_commit.message, '[windows-only]') && '["windows-latest"]' || contains(github.event.head_commit.message, '[reuse:') && '["ubuntu-latest","windows-latest"]' || '["ubuntu-latest","windows-latest","macos-latest"]') }}
     runs-on: ${{ matrix.os }}
     env:
       JOBS: '4'
@@ -27,10 +28,15 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - name: Verify original artifact source inputs or select a fresh build
+        id: request
+        run: node desktop/reuse.cjs request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Initialize diagnostics
         run: |
           mkdir -p "$RUNNER_TEMP/desktop-diagnostics"
-          node -e 'const os=require("node:os");process.stdout.write(JSON.stringify({platform:process.platform,architecture:process.arch,node:process.versions.node,revision:process.env.GITHUB_SHA,osRelease:os.release(),osVersion:os.version(),glibc:process.report.getReport().header.glibcVersionRuntime||null})+"\n")' > "$RUNNER_TEMP/desktop-diagnostics/runner.json"
+          node -e 'const os=require("node:os");process.stdout.write(JSON.stringify({platform:process.platform,architecture:process.arch,node:process.versions.node,revision:process.env.GITHUB_SHA,artifactSourceRevision:process.env.DESKTOP_SOURCE_REVISION,reusedFromRun:process.env.DESKTOP_REUSE_RUN||null,osRelease:os.release(),osVersion:os.version(),glibc:process.report.getReport().header.glibcVersionRuntime||null})+"\n")' > "$RUNNER_TEMP/desktop-diagnostics/runner.json"
       - run: npm ci
       - run: npx --no-install prisma generate
       - run: npm run lint
@@ -44,12 +50,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc make pkgconf meson ninja-build nasm curl xz-utils xvfb xauth openbox dbus-x11 gnome-keyring libsecret-1-0 libsecret-tools libnss3 libatk-bridge2.0-0 libgtk-3-0t64 libasound2t64
       - name: Provision macOS native media compiler tools
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && steps.request.outputs.reuse_run == ''
         run: brew install meson ninja nasm pkgconf
         env:
           HOMEBREW_NO_AUTO_UPDATE: '1'
       - name: Provision Windows MINGW64 native media compiler tools
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && steps.request.outputs.reuse_run == ''
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -69,13 +75,14 @@ jobs:
             mingw-w64-x86_64-pkgconf
             mingw-w64-x86_64-nasm
       - name: Build paired media tools from source on Linux or macOS
-        if: runner.os != 'Windows'
+        if: runner.os != 'Windows' && steps.request.outputs.reuse_run == ''
         run: bash ops/build-media.sh --prefix "$RUNNER_TEMP/desktop-media-work" --out "$RUNNER_TEMP/desktop-media-build" --cache "$RUNNER_TEMP/desktop-media-cache"
       - name: Build paired media tools from source on Windows MINGW64
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && steps.request.outputs.reuse_run == ''
         shell: msys2 {0}
         run: bash ops/build-media.sh --prefix "$(cygpath -u "$RUNNER_TEMP")/desktop-media-work" --out "$(cygpath -u "$RUNNER_TEMP")/desktop-media-build" --cache "$(cygpath -u "$RUNNER_TEMP")/desktop-media-cache"
       - name: Build shared application
+        if: steps.request.outputs.reuse_run == ''
         run: |
           node desktop/video-smoke.cjs "$RUNNER_TEMP/desktop-media-build" > "$RUNNER_TEMP/desktop-diagnostics/video.json"
           npm run build
@@ -83,10 +90,30 @@ jobs:
           AUTH_SECRET: desktop-build-only-unused-at-runtime
           NEXT_TELEMETRY_DISABLED: '1'
       - name: Package on native OS
+        if: steps.request.outputs.reuse_run == ''
         run: npm run desktop:package -- "$RUNNER_TEMP/desktop-stage" "$RUNNER_TEMP/desktop-dist"
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           LLM_CANVAS_MEDIA_BUILD: ${{ runner.temp }}/desktop-media-build
+      - name: Download the original rejected installer for rechecking
+        if: steps.request.outputs.reuse_run != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-rejected-${{ matrix.os }}
+          run-id: ${{ steps.request.outputs.reuse_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/desktop-dist
+      - name: Download its original acceptance receipt
+        if: steps.request.outputs.reuse_run != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-diagnostics-${{ matrix.os }}
+          run-id: ${{ steps.request.outputs.reuse_run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/desktop-original-diagnostics
+      - name: Verify the reused installer's original checksum
+        if: steps.request.outputs.reuse_run != ''
+        run: node desktop/reuse.cjs verify-download
       - name: Extract the actual Linux AppImage payload
         if: runner.os == 'Linux'
         timeout-minutes: 5
@@ -267,7 +294,7 @@ jobs:
               binaries.push({name, bytes: fs.statSync(path.join(dist, name)).size, sha256: hash.digest('hex')})
             }
             if (!binaries.some(binary => binary.name === report.artifact.name && binary.sha256 === report.artifact.sha256)) throw new Error('Accepted artifact differs from upload binary')
-            fs.writeFileSync(path.join(diagnostics, 'binaries.json'), JSON.stringify({revision: process.env.GITHUB_SHA, binaries}, null, 2) + '\n')
+            fs.writeFileSync(path.join(diagnostics, 'binaries.json'), JSON.stringify({revision: process.env.DESKTOP_SOURCE_REVISION || process.env.GITHUB_SHA, acceptanceRevision: process.env.GITHUB_SHA, reusedFromRun: process.env.DESKTOP_REUSE_RUN || null, binaries}, null, 2) + '\n')
           }
           main().catch(() => { process.stderr.write('Binary evidence verification failed\n'); process.exitCode = 1 })
           NODE
@@ -326,7 +353,7 @@ jobs:
           retention-days: 7
 
   headless:
-    if: ${{ !contains(github.event.head_commit.message, '[windows-only]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[windows-only]') && !contains(github.event.head_commit.message, '[reuse:') }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

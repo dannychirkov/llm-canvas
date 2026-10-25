@@ -5,8 +5,8 @@ const { gzipSync } = require("node:zlib")
 const { execFileSync } = require("node:child_process")
 
 const rootFiles = new Set(["package.json", "package-lock.json", "LICENSE", "README.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md", ".env.example", "docker.env.example", "Dockerfile", "docker-compose.yml", "docker-entrypoint.sh", ".dockerignore", ".gitignore", ".nvmrc", "next.config.ts", "tsconfig.json", "postcss.config.mjs", "tailwind.config.ts", "eslint.config.mjs"])
-const publicDocs = new Set(["docs/PROVIDER_PROTOCOLS.md", "docs/NODE_COMMUNICATION.md", "docs/TOKENS_AND_CACHING.md", "docs/OPERATIONS.md", "docs/DESKTOP.md", "docs/MEDIA-NOTICES.md"])
-const genericOps = new Set(["ops/source-release.js", "ops/stage-artifact.js", "ops/link-externals.js", "ops/Dockerfile.artifact", "ops/frontend-smoke.js", "ops/persistent-fingerprint.js", "ops/check-image-layers.py", "ops/build-media.sh", "ops/media-sources.json"])
+const publicDocs = new Set(["docs/PROVIDER_PROTOCOLS.md", "docs/NODE_COMMUNICATION.md", "docs/TOKENS_AND_CACHING.md", "docs/OPERATIONS.md", "docs/DESKTOP.md", "docs/MEDIA-NOTICES.md", "docs/NATIVE-SOURCE-MATERIALS.md", "docs/RELEASE-VERIFICATION.md"])
+const genericOps = new Set(["ops/source-release.js", "ops/stage-artifact.js", "ops/link-externals.js", "ops/Dockerfile.artifact", "ops/frontend-smoke.js", "ops/persistent-fingerprint.js", "ops/check-image-layers.py", "ops/build-media.sh", "ops/media-sources.json", "ops/native-source-materials.py", "ops/native-source-pins.json"])
 
 function publishable(filename) {
   if (/(?:^|\/)(?:\.git|\.secrets|node_modules)(?:\/|$)/.test(filename) || /^public\/(?:uploads|canvases)(?:\/|$)/.test(filename) || /(?:\.db(?:-.*)?|\.sqlite.*|\.key|\.pem|\.bak|\.log)$/.test(filename)) return false

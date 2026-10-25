@@ -12,7 +12,9 @@ Changes after the release-candidate baseline will be recorded here. A version bu
 - Add native acceptance for actual NSIS/DMG/AppImage payloads using OS key storage, four launches, browser/provider checks and recovery after killing the main process and backend. Run it manually or through isolated private validation branches matching `feat/desktop-release-validation-*`, alongside isolated headless Docker checks.
 - Allow sanitized clipboard text writes in owned desktop windows while denying reads/device access; protect media/CSV child windows with the same sandbox and restrict external navigation. Render CSV filenames and contents as DOM text.
 - Fail closed when an existing desktop database has lost its encrypted secret; fix import directory copying for Node 22.23.4 while retaining exclusive-copy options.
-- Host gates: 482 tests, 481 passed, zero failed, one BusyBox check skipped; lint/build pass. Native CI [run 40143049074](https://github.com/dannychirkov/llm-canvas/actions/runs/40143049074) is **in progress** at this checkpoint; all OS acceptance results remain pending. Previews remain unsigned, with no signing, notarization, Gatekeeper or public release claim.
+- Retain package-supplied production/client notices and provide a verified native-source companion: four libvips targets,357 Rust crate sources,832 notices and exact Electron FFmpeg source/configuration.
+- Accept actual Windows x64 NSIS, macOS arm64 DMG and Linux x64 AppImage payloads: four launches/eight browser/provider checks each, native OS key storage, Sharp PNG/FFmpeg WAV roundtrips and both process-death recoveries. Windows hosted CI uses Chromium's occlusion-testing switch; installer bytes are unchanged.
+- Pass522 host tests (521 passed, zero failed, one separately covered Alpine-only skip), lint/build and isolated server Chromium/protocol/admission checks. Headless rc4 is deployed with data/secret continuity. See [verification](docs/RELEASE-VERIFICATION.md). Previews remain unsigned; signing, notarization and quarantined first launch are not claimed.
 
 ## 0.1.0-rc.3 — 2026-10-24
 

@@ -51,8 +51,15 @@ async function command(executable, args, { timeoutMs = limits.smoke, env = proce
     }, { timeoutMs, label: path.basename(args[0] || executable) })
     const location = output.match(/\b((?:wire-)?smoke\.cjs):(\d+):\d+/)
     const phase = output.match(/"phase":"([a-z-]{1,40})"/)
-    const diagnostic = (location ? ` at ${location[1]}:${location[2]}` : '') + (phase ? ` (${phase[1]})` : '')
-    assert.equal(state.code, 0, 'Acceptance child failed' + diagnostic)
+    const browserFailure = output.split('\n').map(line => { try { return JSON.parse(line) } catch { return null } }).find(value => value?.check === 'desktop-browser' && value.status === 'failed')
+    const paths = Array.isArray(browserFailure?.failures) ? browserFailure.failures.filter(value => value === 'page exception' || /^\d{3} \/[^?\s#]{0,160}$/.test(value)).slice(0, 10) : []
+    const diagnostic = (location ? ` at ${location[1]}:${location[2]}` : '') + (phase ? ` (${phase[1]})` : '') + (paths.length ? ': ' + paths.join(', ') : '')
+    if (state.code !== 0) {
+      const error = new assert.AssertionError({ message: 'Acceptance child failed' + diagnostic, actual: state.code, expected: 0, operator: 'strictEqual' })
+      if (browserFailure?.readinessState) error.readinessState = browserFailure.readinessState
+      if (browserFailure?.readinessOperation) error.readinessOperation = browserFailure.readinessOperation
+      throw error
+    }
     return output
   } finally {
     if (!state.exited && state.child.pid) {
@@ -301,11 +308,15 @@ async function runAcceptance({ executable, root, artifact, output }) {
     const port = await unusedPort()
     const args = ['--remote-debugging-address=127.0.0.1', `--remote-debugging-port=${port}`]
     if (process.platform === 'linux') args.push('--password-store=gnome-libsecret', '--ozone-platform=x11')
+    // Hosted Windows sessions can occlude a focused window. Chromium exposes
+    // this test switch specifically to keep GUI acceptance deterministic.
+    // Sandbox, permissions and all application readiness checks remain active.
+    if (process.platform === 'win32') args.push('--disable-backgrounding-occluded-windows')
     main = track(spawn(executable, args, { env, cwd: bundle.root, stdio: ['ignore', 'pipe', 'pipe'] }))
     ready = undefined
     // Native output may contain keychain diagnostics. Publish only byte counts
     // and the app's bounded startup phase, never raw stderr or profile files.
-    const launch = { name, mainPid: main.child.pid, stdoutBytes: 0, stderrBytes: 0 }
+    const launch = { name, mainPid: main.child.pid, stdoutBytes: 0, stderrBytes: 0, ciOcclusionWorkaround: process.platform === 'win32' }
     report.launches.push(launch)
     for (const [stream, field] of [[main.child.stdout, 'stdoutBytes'], [main.child.stderr, 'stderrBytes']]) stream.on('data', chunk => {
       launch[field] += chunk.length
@@ -403,6 +414,20 @@ async function runAcceptance({ executable, root, artifact, output }) {
     // Assertions here concern only orchestration metadata, but avoid emitting
     // arbitrary native/library exception strings in uploaded diagnostics.
     report.failure = { phase, kind: error.name, code: error.code || null, message: String(error.message).split('\n')[0].replace(/[a-f0-9]{32,}/gi, '[redacted]').slice(0, 240) }
+    if (error.readinessState) report.failure.lastReadinessState = error.readinessState
+    if (error.readinessOperation) report.failure.readinessOperation = error.readinessOperation
+    if (ready?.pageSocket && !main?.exited) {
+      try {
+        const snapshot = await cdp(ready.pageSocket, 'Runtime.evaluate', { expression: `({pathname:location.pathname,ready:document.readyState,visibility:document.visibilityState,focused:document.hasFocus(),memoryInputs:document.querySelectorAll('.react-flow__node-memory textarea, .react-flow__node-memory input').length,expectedMemoryVisible:[...document.querySelectorAll('.react-flow__node-memory textarea, .react-flow__node-memory input')].some(element=>element.value==='desktop-persistent-value'&&element.getClientRects().length>0&&getComputedStyle(element).visibility==='visible'),loading:document.body.innerText.includes('Loading')})`, returnByValue: true }, { timeoutMs: 1500 })
+        if (snapshot.result?.value) report.failure.browserState = snapshot.result.value
+        const screenshot = await cdp(ready.pageSocket, 'Page.captureScreenshot', { format: 'png' }, { timeoutMs: 1500 })
+        if (typeof screenshot.data === 'string' && screenshot.data.length < 12 * 1024 * 1024) {
+          // The harness owns this fresh synthetic profile, never a user profile.
+          await fs.writeFile(path.join(output, 'failure.png'), Buffer.from(screenshot.data, 'base64'))
+          report.failure.screenshotCaptured = true
+        }
+      } catch { /* Preserve the original failure if the renderer is unavailable. */ }
+    }
     record({ event: 'acceptance_failed', ...report.failure })
   } finally {
     try {
