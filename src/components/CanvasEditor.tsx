@@ -1,5 +1,6 @@
 "use client"
 
+import BrandLogo from "@/components/BrandLogo"
 import { aggregateNodeUsage, nodeOperator, usageTotal } from "@/lib/tokenUsage"
 import { compactCanvasDocument, debugPreview } from "@/lib/debugPayload"
 import { patchExecutionNode } from "@/lib/nodeExecutionState"
@@ -2719,6 +2720,7 @@ function CanvasEditorComponent({ canvasId, canvasTitle, initialData, initialUpda
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
+          <BrandLogo size={36} alt="" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">{canvasTitle}</h1>
             <p className="text-sm text-muted-foreground">Canvas Editor</p>

@@ -181,17 +181,17 @@ async function packageStaged(staged, output, unpacked = false, prepackaged, sele
   return build({ projectDir: staged.app, prepackaged, targets: platform.createTarget(unpacked ? ['dir'] : selectedTargets || targets, architecture), publish: 'never', config: {
     appId: 'io.github.dannychirkov.llm-canvas', productName: 'LLM Canvas', electronVersion: require('electron/package.json').version,
     directories: { app: staged.app, output },
-    files: ['desktop/main.cjs', 'desktop/backend.cjs', 'desktop/profile.cjs', 'desktop/runtime.cjs', 'desktop/window-policy.cjs', 'desktop/updates.cjs', 'LICENSE', 'package.json'],
+    files: ['desktop/main.cjs', 'desktop/backend.cjs', 'desktop/profile.cjs', 'desktop/runtime.cjs', 'desktop/window-policy.cjs', 'desktop/updates.cjs', 'desktop/assets/icon.png', 'desktop/assets/icon.ico', 'LICENSE', 'package.json'],
     extraResources: resourceMappings(staged.server),
     afterPack: async context => {
       verifyServer(path.join(context.packager.getResourcesDir(context.appOutDir), 'server'))
       if (process.platform === 'linux') writeLinuxLauncher(context.appOutDir)
     },
     asar: true, npmRebuild: false,
-    linux: linuxPackageOptions(),
-    win: { artifactName: 'LLM-Canvas-${version}-${arch}-Setup.${ext}' },
+    linux: { ...linuxPackageOptions(), icon: path.resolve(staged.app, 'desktop/assets/icon.png') },
+    win: { icon: path.resolve(staged.app, 'desktop/assets/icon.ico'), artifactName: 'LLM-Canvas-${version}-${arch}-Setup.${ext}' },
     nsis: { oneClick: false, perMachine: false, allowToChangeInstallationDirectory: true, deleteAppDataOnUninstall: false },
-    mac: { category: 'public.app-category.developer-tools', identity: null, artifactName: 'LLM-Canvas-${version}-${arch}.${ext}' },
+    mac: { icon: path.resolve(staged.app, 'desktop/assets/icon.icns'), category: 'public.app-category.developer-tools', identity: null, artifactName: 'LLM-Canvas-${version}-${arch}.${ext}' },
   } })
 }
 module.exports = { stageDesktop, copyPrismaPackages, packageStaged, resourceMappings, serverInventory, verifyMediaBuild, writeLinuxLauncher, linuxPackageOptions }

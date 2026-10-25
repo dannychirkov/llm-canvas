@@ -50,7 +50,7 @@ export default function AccountPage() {
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false)
   const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("system")
+  const [theme, setTheme] = useState<"light" | "dark" | "system">("dark")
   
   // Profile editing state
   const [isEditingProfile, setIsEditingProfile] = useState(false)
@@ -74,7 +74,7 @@ export default function AccountPage() {
   useEffect(() => {
     const synchronizeTheme = () => {
       const saved = localStorage.getItem("theme")
-      setTheme(saved === "light" || saved === "dark" ? saved : "system")
+      setTheme(saved === "light" || saved === "dark" || saved === "system" ? saved : "dark")
     }
     window.addEventListener("storage", synchronizeTheme)
     const frame = requestAnimationFrame(synchronizeTheme)
@@ -293,11 +293,7 @@ export default function AccountPage() {
     root.setAttribute("data-theme", resolved)
     
     try {
-      if (newTheme === "system") {
-        localStorage.removeItem("theme")
-      } else {
-        localStorage.setItem("theme", newTheme)
-      }
+      localStorage.setItem("theme", newTheme)
     } catch {}
     
     setTheme(newTheme)

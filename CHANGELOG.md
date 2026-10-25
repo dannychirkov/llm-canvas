@@ -4,6 +4,13 @@
 
 Changes after the release-candidate baseline will be recorded here. A version bump does not publish a release or establish release readiness.
 
+## 0.1.0-rc.7 — 2026-10-25
+
+- Use the original server favicon as the shared browser, Apple, desktop window, installer and application logo; retain all original ICO frames and generate the platform formats from the same artwork.
+- Start in dark mode by default, preserve explicit Light/System preferences, and give native controls the matching color scheme.
+- Replace README screenshots with a dark nine-node workflow arranged from top to bottom, with verified bottom-to-top handle connections, no overlaps or crossing paths, and a matching inspector/provider gallery.
+- Remove merged public validation/old release branches while preserving release tags and reachable history; record source line counts separately from dependencies and generated output.
+
 ## 0.1.0-rc.6 — 2026-10-25
 
 - Add desktop release checks and a Help → Check for Updates command. A newer compatible installer opens only after confirmation; installation remains manual and preserves the local profile.

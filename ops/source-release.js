@@ -8,10 +8,11 @@ const rootFiles = new Set(["package.json", "package-lock.json", "LICENSE", "READ
 const publicDocs = new Set(["docs/PROVIDER_PROTOCOLS.md", "docs/NODE_COMMUNICATION.md", "docs/TOKENS_AND_CACHING.md", "docs/OPERATIONS.md", "docs/DESKTOP.md", "docs/MEDIA-NOTICES.md", "docs/NATIVE-SOURCE-MATERIALS.md", "docs/RELEASE-VERIFICATION.md", "docs/SCREENSHOTS.md", "docs/SPONSORSHIP.md"])
 const publicImages = new Set(["docs/images/canvas-demo.png", "docs/images/context-inspector.png", "docs/images/provider-setup.png"])
 const genericOps = new Set(["ops/source-release.js", "ops/stage-artifact.js", "ops/link-externals.js", "ops/Dockerfile.artifact", "ops/frontend-smoke.js", "ops/persistent-fingerprint.js", "ops/check-image-layers.py", "ops/build-media.sh", "ops/media-sources.json", "ops/native-source-materials.py", "ops/native-source-pins.json"])
+const desktopAssets = new Set(["desktop/assets/icon.png", "desktop/assets/icon.ico", "desktop/assets/icon.icns"])
 
 function publishable(filename) {
   if (/(?:^|\/)(?:\.git|\.secrets|node_modules)(?:\/|$)/.test(filename) || /^public\/(?:uploads|canvases)(?:\/|$)/.test(filename) || /(?:\.db(?:-.*)?|\.sqlite.*|\.key|\.pem|\.bak|\.log)$/.test(filename)) return false
-  return rootFiles.has(filename) || publicDocs.has(filename) || publicImages.has(filename) || genericOps.has(filename) || /^(?:src|types|tests|\.github)\//.test(filename) || /^desktop\/[a-zA-Z-]+\.cjs$/.test(filename) || /^prisma\/(?:schema\.prisma|migrations\/)/.test(filename) || /^public\//.test(filename)
+  return rootFiles.has(filename) || publicDocs.has(filename) || publicImages.has(filename) || genericOps.has(filename) || desktopAssets.has(filename) || /^(?:src|types|tests|\.github)\//.test(filename) || /^desktop\/[a-zA-Z-]+\.cjs$/.test(filename) || /^prisma\/(?:schema\.prisma|migrations\/)/.test(filename) || /^public\//.test(filename)
 }
 
 function sourceRelease(directory, revision = "HEAD", repository = process.cwd()) {

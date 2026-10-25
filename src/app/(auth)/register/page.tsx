@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eye, EyeOff } from "lucide-react"
 import CanvasBackground from "@/components/CanvasBackground"
+import BrandLogo from "@/components/BrandLogo"
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator"
 import { validatePassword } from "@/lib/passwordUtils"
 
@@ -94,6 +95,7 @@ export default function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
+            <BrandLogo size={56} className="mx-auto" alt="" />
             <h1 className="text-3xl font-bold tracking-tight">LLM Canvas</h1>
             <p className="text-muted-foreground">Create your account</p>
           </div>

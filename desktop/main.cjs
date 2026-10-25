@@ -117,7 +117,7 @@ else {
       await new Promise(resolve => setTimeout(resolve, 500))
     }
     phase = 'window startup'
-    window = new BrowserWindow({ width: 1440, height: 950, minWidth: 960, minHeight: 640, show: false, title: 'LLM Canvas', webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, devTools: !app.isPackaged } })
+    window = new BrowserWindow({ width: 1440, height: 950, minWidth: 960, minHeight: 640, show: false, title: 'LLM Canvas', icon: path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png'), webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, devTools: !app.isPackaged } })
     installWindowPolicy(session.defaultSession, window, origin, url => shell.openExternal(url), app.isPackaged)
     updates = createUpdateChecker({ version: app.getVersion(), isPackaged: app.isPackaged,
       fetch: (url, options) => net.fetch(url, options),

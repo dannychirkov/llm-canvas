@@ -56,6 +56,7 @@ function pageFixture(context, page, options = {}) {
     "@/components/ui/tooltip": Object.fromEntries(["Tooltip", "TooltipContent", "TooltipProvider", "TooltipTrigger"].map(name => [name, "div"])),
     "lucide-react": { Eye: "svg", EyeOff: "svg" },
     "@/components/CanvasBackground": "div",
+    "@/components/BrandLogo": "img",
     "@/components/PasswordStrengthIndicator": "div",
   })
   const Page = load(`src/app/(auth)/${page}/page.tsx`).default

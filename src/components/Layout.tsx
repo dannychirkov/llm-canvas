@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 import { usePathname } from "next/navigation"
+import BrandLogo from "@/components/BrandLogo"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -84,9 +85,12 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex flex-col h-full lg:h-screen">
           {/* Logo and close button */}
           <div className="flex items-center justify-between p-6 border-b">
-            <div>
-              <h1 className="text-xl font-bold">LLM Canvas</h1>
-              <p className="text-sm text-muted-foreground">v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
+            <div className="flex items-center gap-3">
+              <BrandLogo size={36} alt="" />
+              <div>
+                <h1 className="text-xl font-bold">LLM Canvas</h1>
+                <p className="text-sm text-muted-foreground">v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
+              </div>
             </div>
             <Button
               variant="ghost"
@@ -187,7 +191,10 @@ export default function Layout({ children }: LayoutProps) {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold">LLM Canvas</h1>
+          <div className="flex items-center gap-2">
+            <BrandLogo size={28} alt="" />
+            <h1 className="text-lg font-semibold">LLM Canvas</h1>
+          </div>
           <div className="w-9" /> {/* Spacer for centering */}
         </div>
 

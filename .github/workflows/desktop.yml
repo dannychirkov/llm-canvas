@@ -46,7 +46,7 @@ jobs:
       - name: Test desktop orchestration, profile and platform paths
         run: |
           set -o pipefail
-          node --test tests/providerSetupWizard.test.js tests/desktopAcceptance.test.js tests/desktopProfile.test.js tests/desktopRuntime.test.js tests/desktopStorageLock.test.js tests/desktopPackaging.test.js tests/desktopWindowPolicy.test.js tests/csvPreviewSafety.test.js tests/publicPathPlatforms.test.js | tee "$RUNNER_TEMP/desktop-diagnostics/tests.tap"
+          node --test tests/branding.test.js tests/providerSetupWizard.test.js tests/desktopAcceptance.test.js tests/desktopProfile.test.js tests/desktopRuntime.test.js tests/desktopStorageLock.test.js tests/desktopPackaging.test.js tests/desktopWindowPolicy.test.js tests/csvPreviewSafety.test.js tests/publicPathPlatforms.test.js | tee "$RUNNER_TEMP/desktop-diagnostics/tests.tap"
       - name: Provision Linux native media, display and Secret Service dependencies
         if: runner.os == 'Linux'
         run: |

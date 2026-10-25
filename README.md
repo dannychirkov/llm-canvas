@@ -1,3 +1,5 @@
+<p align="center"><img src="public/brand/icon.png" alt="LLM Canvas" width="80" height="80"></p>
+
 # LLM Canvas
 
 **Conversations branch. Your workspace should too.**
@@ -6,9 +8,9 @@ A visual workspace for working with language models. Put a question on the canva
 
 [Download desktop previews](https://github.com/dannychirkov/llm-canvas/releases) · [Self-host with Docker](#run-with-docker) · [Screenshots](docs/SCREENSHOTS.md) · [Support the project](#support-and-sponsorship)
 
-![A demonstration canvas with connected prompts, parallel model replies and a shared conclusion](docs/images/canvas-demo.png)
+![A dark demonstration canvas with nine nodes, parallel review branches and a shared conclusion](docs/images/canvas-demo.png)
 
-*One question, several perspectives, a connected result. This screenshot uses a synthetic example; see the [gallery](docs/SCREENSHOTS.md) for details.*
+*A top-to-bottom workflow: one question, two perspectives, independent reviews and a connected result. This screenshot uses a synthetic example; see the [gallery](docs/SCREENSHOTS.md) for details.*
 
 Windows, macOS and Linux desktop previews share the same core as the headless server. Bring your own provider credentials or connect a local model server. Licensed under [Apache 2.0](LICENSE).
 

@@ -1,12 +1,12 @@
 # LLM Canvas screenshots
 
-These screenshots show the actual RC5 application with a synthetic demonstration account and graph. The prompts and saved example replies were prepared for documentation; they are not live model benchmarks. No personal canvases, real provider keys or private uploads are included.
+These screenshots show the actual application with a synthetic demonstration account and graph. The prompts and saved example replies were prepared for documentation; they are not live model benchmarks. No personal canvases, real provider keys or private uploads are included.
 
 ## Branch and combine
 
-![A demonstration canvas with a shared question, parallel model branches and a connected conclusion](images/canvas-demo.png)
+![A dark nine-node canvas with two review branches, source notes and a connected conclusion](images/canvas-demo.png)
 
-Keep several perspectives beside each other, then connect their replies to the next step. Arrows select context; use Run Selected to execute selected dependencies in order.
+Nine nodes form a top-to-bottom workflow: explore two perspectives, add source context, review each branch, then merge the findings. Each connection leaves the source at its bottom handle and enters the next node at its top handle. Arrows select context; use Run Selected to execute selected dependencies in order.
 
 ## Inspect context
 

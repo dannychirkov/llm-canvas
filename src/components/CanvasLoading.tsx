@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
+import BrandLogo from "@/components/BrandLogo"
 
 interface CanvasLoadingProps {
   stage: 'creating' | 'loading' | 'parsing' | 'initializing' | 'rendering' | 'ready'
@@ -80,6 +81,7 @@ export default function CanvasLoading({
       <Card className="w-96 mx-4">
         <CardContent className="p-6">
           <div className="space-y-4">
+            <BrandLogo size={48} className="mx-auto" />
             <div className="flex items-center justify-center space-x-3">
               {showSpinner && (
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />

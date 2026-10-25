@@ -317,6 +317,7 @@ test('main process restores the Help menu after window policy and preserves the 
     './updates.cjs': require('../desktop/updates.cjs') }
   t.after(() => app.emit('before-quit', { preventDefault() {} }))
   vm.runInNewContext(fs.readFileSync(require.resolve('../desktop/main.cjs'), 'utf8'), {
+    __dirname: require('node:path').dirname(require.resolve('../desktop/main.cjs')),
     require: name => { assert.ok(Object.hasOwn(modules, name), name); return modules[name] },
     process: { platform: 'linux', env: { LLM_CANVAS_DISABLE_UPDATE_CHECKS: '1' }, resourcesPath: '/bundle', stderr: { write() {} } },
     fetch: async () => ({ ok: true }), setTimeout, clearTimeout, setInterval, clearInterval,

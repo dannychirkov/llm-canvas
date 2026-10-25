@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Eye, EyeOff } from "lucide-react"
 import CanvasBackground from "@/components/CanvasBackground"
+import BrandLogo from "@/components/BrandLogo"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -52,6 +53,7 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
+            <BrandLogo size={56} className="mx-auto" alt="" />
             <h1 className="text-3xl font-bold tracking-tight">LLM Canvas</h1>
             <p className="text-muted-foreground">Sign in to your account</p>
           </div>
