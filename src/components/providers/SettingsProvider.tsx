@@ -50,6 +50,7 @@ export function useSettings() {
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
 	const [value, setValue] = React.useState<SettingsContextValue>(defaultValue)
 	const { status } = useSession()
+	const activeRequest = React.useRef<AbortController | null>(null)
 
 	// Load canvas preferences from localStorage
 	const loadCanvasPreferences = React.useCallback((): CanvasPreferences => {
@@ -85,8 +86,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 	}, [loadCanvasPreferences, saveCanvasPreferences])
 
 	const load = React.useCallback(async function refreshSettings() {
+		activeRequest.current?.abort()
+		const controller = new AbortController()
+		activeRequest.current = controller
+		const cancel = () => controller.abort()
+		window.addEventListener("pagehide", cancel, { once: true })
 		try {
-			const res = await fetch("/api/settings", { cache: "no-store" })
+			const res = await fetch("/api/settings", { cache: "no-store", signal: controller.signal })
+			if (controller.signal.aborted) return
 			if (!res.ok) {
 				// If unauthorized (401), user is not logged in - this is expected on login page
 				if (res.status === 401) {
@@ -98,6 +105,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 				throw new Error(`Failed to load settings: ${res.status} ${errorText}`)
 			}
 			const data = await res.json()
+			if (controller.signal.aborted) return
 			const providers: Record<ProviderKey, ProviderSettingsClient> = {
 				openai: { hasKey: Boolean(data?.openai?.hasKey), activeModels: data?.openai?.activeModels || [] },
 				gemini: { hasKey: Boolean(data?.gemini?.hasKey), activeModels: data?.gemini?.activeModels || [] },
@@ -106,6 +114,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 			const canvasPreferences = loadCanvasPreferences()
 			setValue({ providers, customEndpoints: Array.isArray(data?.custom) ? data.custom : [], loaded: true, refresh: refreshSettings, canvasPreferences, updateCanvasPreferences })
 		} catch (error) {
+			if (controller.signal.aborted) return
 			console.error("Error loading settings:", error)
 			// fallback from local backup written on save
 			try {
@@ -124,6 +133,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 			} catch { }
 			const canvasPreferences = loadCanvasPreferences()
 			setValue((prev) => ({ ...prev, loaded: true, canvasPreferences, updateCanvasPreferences }))
+		} finally {
+			window.removeEventListener("pagehide", cancel)
+			if (activeRequest.current === controller) activeRequest.current = null
 		}
 	}, [loadCanvasPreferences, updateCanvasPreferences])
 
@@ -131,6 +143,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 		if (status === "loading") return
 
 		void load()
+		return () => activeRequest.current?.abort()
 	}, [status, load, loadCanvasPreferences, updateCanvasPreferences])
 
 	// Listen for settings updates from other components
@@ -138,9 +151,16 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 		const handleSettingsUpdate = () => {
 			load()
 		}
+		const handlePageRestore = (event: PageTransitionEvent) => {
+			if (event.persisted) void load()
+		}
 
 		window.addEventListener('settingsUpdated', handleSettingsUpdate)
-		return () => window.removeEventListener('settingsUpdated', handleSettingsUpdate)
+		window.addEventListener('pageshow', handlePageRestore)
+		return () => {
+			window.removeEventListener('settingsUpdated', handleSettingsUpdate)
+			window.removeEventListener('pageshow', handlePageRestore)
+		}
 	}, [load])
 
 	return (
