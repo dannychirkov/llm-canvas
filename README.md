@@ -12,7 +12,7 @@ A visual workspace for working with language models. Put a question on the canva
 
 Windows, macOS and Linux desktop previews share the same core as the headless server. Bring your own provider credentials or connect a local model server. Licensed under [Apache 2.0](LICENSE).
 
-**Current release: 0.1.0-rc.5.** This is a preview: interfaces and export formats may change before a stable release. Read the [changelog](CHANGELOG.md) and keep backups when upgrading.
+**Current release: 0.1.0-rc.6.** This is a preview: interfaces and export formats may change before a stable release. Read the [changelog](CHANGELOG.md) and keep backups when upgrading.
 
 ## Why a canvas?
 
@@ -216,8 +216,8 @@ npm run build
 Tests use Node's built-in runner with the installed dependencies. Live integration scripts may require an isolated database/uploads copy and can incur provider charges; they are not part of the basic setup.
 
 The RC6 host checkpoint passes **549 tests: 548 passed, zero failed,
-one host BusyBox check skipped**. The last published RC5 installer and server
-results are recorded separately. The Alpine storage
+one host BusyBox check skipped**. Lint/build pass. RC6 native installers and the fresh Alpine image pass; the
+last full server integration/deployment checkpoint remains RC5. The Alpine storage
 check passes separately on native Alpine. Installed desktop checks and isolated
 server Chromium/protocol/admission results are recorded in the
 [verification record](docs/RELEASE-VERIFICATION.md).

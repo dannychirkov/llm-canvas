@@ -4,10 +4,10 @@ LLM Canvas uses one Next.js/Prisma application in four distributions:
 
 | Distribution | Wrapper | Data location | Verification |
 | --- | --- | --- | --- |
-| Windows | Electron + NSIS installer | `%APPDATA%/LLM Canvas` | rc5 x64 NSIS accepted |
-| macOS | Electron + DMG | `~/Library/Application Support/LLM Canvas` | rc5 arm64 DMG accepted |
-| Linux | Electron + AppImage / tar.gz | `${XDG_CONFIG_HOME:-~/.config}/LLM Canvas` | rc5 x64 AppImage accepted |
-| Headless server | Docker / Node.js | Operator-managed SQLite and uploads | rc5 native Alpine image accepted; no graphical session required |
+| Windows | Electron + NSIS installer | `%APPDATA%/LLM Canvas` | rc6 x64 NSIS accepted |
+| macOS | Electron + DMG | `~/Library/Application Support/LLM Canvas` | rc6 arm64 DMG accepted |
+| Linux | Electron + AppImage / tar.gz | `${XDG_CONFIG_HOME:-~/.config}/LLM Canvas` | rc6 x64 AppImage accepted |
+| Headless server | Docker / Node.js | Operator-managed SQLite and uploads | rc6 native Alpine image accepted; no graphical session required |
 
 Desktop includes Chromium, Node.js, the compiled application, native Prisma and
 media tools. It does not install or generate packages at startup. Models still
@@ -47,8 +47,8 @@ The **Native desktop acceptance** workflow builds on Windows, macOS and Linux,
 then checks the actual installer payload before uploading accepted artifacts.
 It supports manual dispatch and pushes to isolated private validation branches
 matching `feat/desktop-release-validation-*`; it does not publish releases.
-The rc5 native checks pass on all three systems. Host gates pass530 tests
-(529 passed, zero failed, one separately covered Alpine-only skip), lint and build.
+The rc6 native checks pass on all three systems. Host gates pass 549 tests
+(548 passed, zero failed, one separately covered Alpine-only skip), lint and build.
 See [RELEASE-VERIFICATION.md](RELEASE-VERIFICATION.md) for actual artifact hashes,
 checks and the explicit Windows CI occlusion workaround. These results do not
 establish trusted signing or quarantined OS first launch.
@@ -105,7 +105,7 @@ prompts. Trusted signing is not configured in this RC.
 RC5 has no update checker: users on `0.1.0-rc.5` must download and manually
 install a newer desktop release once to gain update notifications.
 
-Builds with the checker offer **Help → Check for Updates…** and check automatically
+RC6 builds offer **Help → Check for Updates…** and check automatically
 30 seconds after packaged startup, then every six hours. Native dialogs also
 work in the unsigned macOS preview. Checks use only the public GitHub releases
 feed for `dannychirkov/llm-canvas`: prerelease apps include RC releases (up to
