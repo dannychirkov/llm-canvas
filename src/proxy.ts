@@ -14,6 +14,9 @@ export async function proxy(request: NextRequest) {
     if (pathname === "/api" || pathname.startsWith("/api/")) {
       return NextResponse.next()
     }
+    if (pathname === "/brand/icon.png" || pathname === "/brand/apple-touch-icon.png") {
+      return NextResponse.next()
+    }
     if (pathname === "/_next/image") {
       const source = request.nextUrl.searchParams.get("url")
       if (source && privatePath(new URL(source, request.url).pathname)) return new NextResponse(null, { status: 404 })

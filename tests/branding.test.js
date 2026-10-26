@@ -11,11 +11,45 @@ const asar = require('@electron/asar')
 const { getFileMatchers, copyFiles } = require('app-builder-lib/out/fileMatcher')
 const { generateBrandAssets } = require('../desktop/brand-assets.cjs')
 const { publishable } = require('../ops/source-release')
+const { createLoader } = require('./loadSource')
 
 const root = path.resolve(__dirname, '..')
 const read = name => fs.readFileSync(path.join(root, name))
 const source = read('src/app/favicon.ico')
 const assets = ['public/brand/icon.png', 'public/brand/apple-touch-icon.png', 'desktop/assets/icon.png', 'desktop/assets/icon.ico', 'desktop/assets/icon.icns']
+
+test('exact public branding paths bypass authentication and database access', async () => {
+  const { proxy } = createLoader({
+    '@/lib/auth': { auth: async () => { throw new Error('Brand artwork must not require a session') } },
+    '@/lib/prisma': { prisma: {} },
+  })('src/proxy.ts')
+  for (const pathname of ['/brand/icon.png', '/brand/apple-touch-icon.png']) {
+    const url = 'http://branding.test' + pathname + '?version=7'
+    const response = await proxy({ url, nextUrl: new URL(url) })
+    assert.equal(response.status, 200)
+    assert.equal(response.headers.get('x-middleware-next'), '1')
+    assert.equal(response.headers.get('location'), null)
+  }
+})
+
+test('branding access does not expose neighboring paths or private uploads', async () => {
+  const { proxy } = createLoader({
+    '@/lib/auth': { auth: async () => null },
+    '@/lib/prisma': { prisma: { user: { count: async () => 1 } } },
+  })('src/proxy.ts')
+  for (const pathname of ['/brand/other.png', '/brand/icon.png/extra', '/brand/apple-touch-icon.png/extra']) {
+    const url = 'http://branding.test' + pathname
+    const response = await proxy({ url, nextUrl: new URL(url) })
+    assert.equal(response.status, 307)
+    assert.equal(response.headers.get('location'), 'http://branding.test/login')
+  }
+  for (const pathname of ['/uploads/canvases/foreign/image.png', '/canvases/foreign/image.png', '/brand/../uploads/avatars/private.png']) {
+    const url = new URL('http://branding.test' + pathname)
+    const response = await proxy({ url: url.href, nextUrl: url })
+    assert.equal(response.status, 401)
+    assert.equal(response.headers.get('x-middleware-next'), null)
+  }
+})
 
 function frames(ico) {
   assert.equal(ico.readUInt16LE(0), 0)
