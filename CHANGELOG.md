@@ -6,7 +6,7 @@ Changes after the release-candidate baseline will be recorded here. A version bu
 
 ## Unreleased
 
-- Expand the README hero to a 21-node creative production project with product photography, image editing, CSV feedback, shared Memory, excluded drafts, summarization and multiple model branches. Refresh the inspector capture and explain the prepared demonstration data; RC7 application binaries are unchanged.
+- Restore the maintainer's original canvas, Debug Inspector and provider-settings screenshots in place of staged examples. Preserve image bytes and label the earlier interface clearly; RC7 application binaries are unchanged.
 
 ## 0.1.0-rc.7 — 2026-10-26
 
