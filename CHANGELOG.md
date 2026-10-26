@@ -4,6 +4,10 @@
 
 Changes after the release-candidate baseline will be recorded here. A version bump does not publish a release or establish release readiness.
 
+## Unreleased
+
+- Expand the README hero to a 21-node creative production project with product photography, image editing, CSV feedback, shared Memory, excluded drafts, summarization and multiple model branches. Refresh the inspector capture and explain the prepared demonstration data; RC7 application binaries are unchanged.
+
 ## 0.1.0-rc.7 — 2026-10-26
 
 - Use the original server favicon as the shared browser, Apple, desktop window, installer and application logo; retain all original ICO frames and generate the platform formats from the same artwork.

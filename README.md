@@ -8,9 +8,9 @@ A visual workspace for working with language models. Put a question on the canva
 
 [Download desktop previews](https://github.com/dannychirkov/llm-canvas/releases) · [Self-host with Docker](#run-with-docker) · [Screenshots](docs/SCREENSHOTS.md) · [Support the project](#support-and-sponsorship)
 
-![A dark demonstration canvas with nine nodes, parallel review branches and a shared conclusion](docs/images/canvas-demo.png)
+![A dark 21-node production canvas with product photography, image generation, shared memory, CSV feedback, model branches and excluded drafts](docs/images/canvas-demo.png)
 
-*A top-to-bottom workflow: one question, two perspectives, independent reviews and a connected result. This screenshot uses a synthetic example; see the [gallery](docs/SCREENSHOTS.md) for details.*
+*From product reference to campaign assets: 21 nodes combine photography, customer feedback, shared Memory, parallel model reviews, summarization, image editing and launch copy. Gray drafts are excluded from context. This is a fictional project with prepared example results; see the [gallery](docs/SCREENSHOTS.md) for details and the full-size image.*
 
 Windows, macOS and Linux desktop previews share the same core as the headless server. Bring your own provider credentials or connect a local model server. Licensed under [Apache 2.0](LICENSE).
 
