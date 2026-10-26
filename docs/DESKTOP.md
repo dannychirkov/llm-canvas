@@ -4,10 +4,10 @@ LLM Canvas uses one Next.js/Prisma application in four distributions:
 
 | Distribution | Wrapper | Data location | Verification |
 | --- | --- | --- | --- |
-| Windows | Electron + NSIS installer | `%APPDATA%/LLM Canvas` | rc6 x64 NSIS accepted |
-| macOS | Electron + DMG | `~/Library/Application Support/LLM Canvas` | rc6 arm64 DMG accepted |
-| Linux | Electron + AppImage / tar.gz | `${XDG_CONFIG_HOME:-~/.config}/LLM Canvas` | rc6 x64 AppImage accepted |
-| Headless server | Docker / Node.js | Operator-managed SQLite and uploads | rc6 native Alpine image accepted; no graphical session required |
+| Windows | Electron + NSIS installer | `%APPDATA%/LLM Canvas` | rc7 x64 NSIS accepted |
+| macOS | Electron + DMG | `~/Library/Application Support/LLM Canvas` | rc7 arm64 DMG accepted |
+| Linux | Electron + AppImage / tar.gz | `${XDG_CONFIG_HOME:-~/.config}/LLM Canvas` | rc7 x64 AppImage accepted |
+| Headless server | Docker / Node.js | Operator-managed SQLite and uploads | rc7 native Alpine image accepted; no graphical session required |
 
 Desktop includes Chromium, Node.js, the compiled application, native Prisma and
 media tools. It does not install or generate packages at startup. Models still
@@ -45,10 +45,10 @@ output, with at least 6 GB free for packaging. ExFAT/shared removable disks may 
 changes or dependency links; completed archives can be copied there afterward.
 The **Native desktop acceptance** workflow builds on Windows, macOS and Linux,
 then checks the actual installer payload before uploading accepted artifacts.
-It supports manual dispatch and pushes to isolated private validation branches
+It supports manual dispatch and pushes to temporary validation branches
 matching `feat/desktop-release-validation-*`; it does not publish releases.
-The rc6 native checks pass on all three systems. Host gates pass 549 tests
-(548 passed, zero failed, one separately covered Alpine-only skip), lint and build.
+The rc7 native checks pass on all three systems. Host gates pass 564 tests
+(563 passed, zero failed, one separately covered Alpine-only skip), lint and build.
 See [RELEASE-VERIFICATION.md](RELEASE-VERIFICATION.md) for actual artifact hashes,
 checks and the explicit Windows CI occlusion workaround. These results do not
 establish trusted signing or quarantined OS first launch.
@@ -79,15 +79,15 @@ release record; it is not a publisher signature.
 
 | System | Asset | Installation |
 | --- | --- | --- |
-| Windows x64 | `LLM-Canvas-0.1.0-rc.5-x64-Setup.exe` | Run the NSIS installer as your regular account, then open LLM Canvas. |
-| macOS Apple silicon | `LLM-Canvas-0.1.0-rc.5-arm64.dmg` | Open the DMG, copy LLM Canvas to Applications, then open the copied app. Intel Macs are not an accepted target for this RC. |
-| Linux x64 | `LLM-Canvas-0.1.0-rc.5-x86_64.AppImage` | Make it executable and run it with an unlocked supported system keyring. |
+| Windows x64 | `LLM-Canvas-0.1.0-rc.7-x64-Setup.exe` | Run the NSIS installer as your regular account, then open LLM Canvas. |
+| macOS Apple silicon | `LLM-Canvas-0.1.0-rc.7-arm64.dmg` | Open the DMG, copy LLM Canvas to Applications, then open the copied app. Intel Macs are not an accepted target for this RC. |
+| Linux x64 | `LLM-Canvas-0.1.0-rc.7-x86_64.AppImage` | Make it executable and run it with an unlocked supported system keyring. |
 
 ```sh
-chmod +x LLM-Canvas-0.1.0-rc.5-x86_64.AppImage
-./LLM-Canvas-0.1.0-rc.5-x86_64.AppImage
+chmod +x LLM-Canvas-0.1.0-rc.7-x86_64.AppImage
+./LLM-Canvas-0.1.0-rc.7-x86_64.AppImage
 # Without FUSE:
-./LLM-Canvas-0.1.0-rc.5-x86_64.AppImage --appimage-extract-and-run
+./LLM-Canvas-0.1.0-rc.7-x86_64.AppImage --appimage-extract-and-run
 ```
 
 Unsigned Windows downloads may show an unknown-publisher/SmartScreen prompt;
@@ -105,7 +105,7 @@ prompts. Trusted signing is not configured in this RC.
 RC5 has no update checker: users on `0.1.0-rc.5` must download and manually
 install a newer desktop release once to gain update notifications.
 
-RC6 builds offer **Help → Check for Updates…** and check automatically
+Desktop releases since RC6 offer **Help → Check for Updates…** and check automatically
 30 seconds after packaged startup, then every six hours. Native dialogs also
 work in the unsigned macOS preview. Checks use only the public GitHub releases
 feed for `dannychirkov/llm-canvas`: prerelease apps include RC releases (up to
@@ -127,6 +127,10 @@ Set `LLM_CANVAS_DISABLE_UPDATE_CHECKS=1` in the launching environment to disable
 automatic checks; the Help menu check remains available. Development launches
 do not check automatically. Native acceptance runs explicitly set this variable
 to keep external release traffic and update dialogs out of deterministic runs.
+
+## Appearance and application icons
+
+Fresh profiles start in Dark. Use **Account → Appearance** for Light, Dark or System; explicit selections persist, and System resolves the OS preference on startup. Existing Light selections are retained. Browser/Apple and Windows/macOS/Linux package/window icons derive from the unchanged server favicon. Regenerate the platform assets with `node desktop/brand-assets.cjs`; larger sizes resample the original artwork.
 
 ## First launch and storage
 

@@ -1,55 +1,61 @@
-# RC6 verification record
+# RC7 verification record
 
-Version **0.1.0-rc.6**, 25 October 2026. One shared application core, three native desktop distributions and a headless server. These are measured acceptance results for the listed targets.
+Version **0.1.0-rc.7**, 26 October 2026. One shared application core, three native desktop distributions and a headless server. These are measured results for the listed targets.
 
 ## Accepted binary identity
 
-[Native workflow 40220321927](https://github.com/dannychirkov/llm-canvas/actions/runs/40220321927) builds fresh Windows x64, macOS arm64, Linux x64 and Alpine artifacts from clean source `1833937b787021e4261aea1391f716361528a067`. Each job succeeds. The exact 374-file build-source archive has SHA-256 `a311fb8e8b229331e2d4c4b4409793f8331605890814f8c94db9553531832512`. The published source adds only release documentation; the release manifest records both revisions and the unchanged application/build inputs.
+[Native workflow 40248424585](https://github.com/dannychirkov/llm-canvas/actions/runs/40248424585) builds fresh Windows x64, macOS arm64, Linux x64 and Alpine artifacts from clean source `b0b14005c9388f9f706ff03f7bec6015e4ebd115`. Every job succeeds. The exact 383-file build-source archive has SHA-256 `6dabefb265cf25fe6c653afc96b711f7870815f960d2387ce5753a03106562a2`. Published source changes only release documentation afterward; manifests retain both revisions and prove all runtime/build inputs match.
 
 | Target | Accepted artifact | SHA-256 |
 | --- | --- | --- |
-| Windows x64 | `LLM-Canvas-0.1.0-rc.6-x64-Setup.exe` | `55ffa02707f4f015cacfe2c893791335144883f451bf028071d149320c27674a` |
-| macOS arm64 | `LLM-Canvas-0.1.0-rc.6-arm64.dmg` | `cf3dd583347bd4e214770613aa25f8d38060ed418c6e4a9f8c87cc3e6b3b0368` |
-| Linux x64 | `LLM-Canvas-0.1.0-rc.6-x86_64.AppImage` | `e70899f8759745faca34dbc83c21d53162ef44cb69b96f411f3470f3fc6dfb79` |
-| Headless Linux x64 | `headless-image.tar.gz` | `f6f2da1adf7ec7b9f7dd20f175a24e131ca14e2f9b001bd18bec27b88547aad5` |
+| Windows x64 | `LLM-Canvas-0.1.0-rc.7-x64-Setup.exe` | `73efc25f9621a830df1dc236931d2401d46ca164ad7397e220924dcaaaf444de` |
+| macOS arm64 | `LLM-Canvas-0.1.0-rc.7-arm64.dmg` | `420f8d56f1b5e9162949b46863f9086a95c7157cb5f591db764f66e23e504651` |
+| Linux x64 | `LLM-Canvas-0.1.0-rc.7-x86_64.AppImage` | `7ded4164fc31d64ccbca25fdd47e1f0a8cdb4c3d6935379b9ac55a61df028afc` |
+| Headless Linux x64 | `headless-image.tar.gz` | `4af5bad61e6280102f8b14a752a64f59c28a8b22723fca4230ee4bc42f51705c` |
 
-Load the headless Docker archive with `docker load --input headless-image.tar.gz`; its loaded tag is `llm-canvas-headless:validation`. Follow the [operations guide](OPERATIONS.md) before connecting persistent data. Its isolated first start, paired media and native Alpine storage/process-death tests pass. All 19 exported layers pass the private-path scan with zero private artifacts. This scoped scan is not a general security certification.
+Load the headless Docker archive with `docker load --input headless-image.tar.gz`; its tag is `llm-canvas-headless:validation`. Follow the [operations guide](OPERATIONS.md) before connecting persistent data. Isolated first start, paired media and Alpine storage/process-death tests pass. All 19 image layers pass the scoped private-path scan with zero private artifacts.
 
 ## Installed desktop acceptance
 
-Each actual NSIS/DMG/AppImage payload passes four launches and eight browser/provider checks with a fresh synthetic profile, real DPAPI/Keychain/Secret Service, installed payload provenance and Chromium renderer isolation. Both main-process and backend termination are followed by verified recovery. No real provider account or paid inference is used.
+Each actual NSIS/DMG/AppImage payload passes four launches/eight browser/provider checks with a fresh synthetic profile, real DPAPI/Keychain/Secret Service, installed payload provenance and renderer isolation. Both main-process and backend termination are followed by verified recovery. No real provider account or paid inference is used.
 
 | Check | Windows | macOS | Linux |
 | --- | --- | --- | --- |
 | Installer/copy/extraction | NSIS installed | DMG mounted/app copied | AppImage extracted |
 | Account/session/canvas persistence | Pass | Pass | Pass |
-| Saved encrypted provider credential | Pass | Pass | Pass |
+| Saved encrypted credential | Pass | Pass | Pass |
 | Chat/SSE; 18 tokens/call, 3 cached, 2 reasoning, 36 ledger delta | Pass | Pass | Pass |
-| Clipboard write/read denied; renderer has no Node | Pass | Pass | Pass |
-| Native paired FFmpeg/FFprobe 9.0.2 WAV and standard-Node Sharp PNG | Pass | Pass | Pass |
-| Main-process death: orphan backend stopped | 112ms | 105ms | 103ms |
+| Clipboard restrictions; renderer has no Node | Pass | Pass | Pass |
+| Standard-Node Sharp PNG and paired FFmpeg/FFprobe 9.0.2 WAV | Pass | Pass | Pass |
+| Main-process death: orphan backend stopped | 112ms | 225ms | 103ms |
 | Backend death: resume after explicit modal-main cleanup | Pass | Pass | Pass |
-| Update-selection/native-UI wiring regressions | 19 pass | 19 pass | 19 pass |
+| Settings lifecycle regressions | 8 pass | 8 pass | 8 pass |
+| Update-check regressions | 19 pass | 19 pass | 19 pass |
+| Branding/artwork/native format/ASAR regressions | 7 pass | 7 pass | 7 pass |
 
-Native media builds additionally pass metadata/JPEG/frame extraction on six synthetic H.264 MP4/MOV, HEVC MKV, VP8/VP9 WebM and AV1 MKV fixtures. AppImage preserves sandboxing; `--no-sandbox` is rejected.
+Media metadata/JPEG/frame checks also pass on six synthetic H.264 MP4/MOV, HEVC MKV, VP8/VP9 WebM and AV1 MKV fixtures. The AppImage preserves sandboxing; `--no-sandbox` is rejected. Windows retains the documented hosted-CI occlusion-testing switch.
 
-Windows acceptance retains the explicit hosted-CI `--disable-backgrounding-occluded-windows` launch switch. Native startup/security/accounting assertions and installer bytes are unchanged by that harness condition; interactive testing of every window-manager configuration is not implied.
+A later copied-data browser gate also exposed stale settings requests during document navigation. The corrected release cancels superseded/session/unmount/pagehide requests and reloads after cached-page restoration; eight mounted lifecycle regressions pass. Exact public branding paths also bypass authentication; neighboring and private-media paths remain protected. Fresh standalone requests verify HTTP 200 before login for both PNGs. Earlier artifacts are superseded.
 
-Previews remain unsigned. SmartScreen reputation, downloaded-file quarantine, Gatekeeper and notarization are not established by installation/copy tests. Intel macOS and other CPU builds are not provided. See [installation](DESKTOP.md#install-the-preview).
+The initial RC7 run stopped before Windows packaging because its ASAR test passed a POSIX-separated member path. The corrected fixture uses node:path; no asset/pixel/format assertion was removed. This record covers the fresh complete corrected run above.
 
-## Update checks
+Previews remain unsigned. Signing, reputation, downloaded-file quarantine and notarization are not established by CI. Intel macOS and other CPU builds are not provided; [installation instructions](DESKTOP.md#install-the-preview) retain that scope.
 
-The main-process checker uses the official public GitHub feed, strict SemVer/channel selection, exact compatible assets, bounded response/deadline, cooldown/singleflight and shutdown cancellation. Nineteen mocked regressions exercise selection, errors, cancellation, consent and actual main-process Help-menu wiring on each OS. A real public feed check also selects the correct RC5 installer for all three simulated RC4 targets. These checks do not establish automatic installer execution: Download update only opens a browser link. Native acceptance disables background checks to remain deterministic; it does not exercise a live GitHub dialog on each OS.
+## Dark theme, branding and documentation
 
-Users of RC5 need one manual installation of RC6 to gain notifications. Builds with the checker provide Help → Check for Updates and packaged automatic checks; [update behavior and offline opt-out](DESKTOP.md#update-notifications) are documented.
+The canonical server favicon is byte-identical. Browser/Apple/native formats derive from that artwork; all original ICO frames remain. Reproducible generation and seven regressions verify decoded pixels, transparency, formats and actual ASAR inclusion. App headers and native package/window configuration use the same mark; visual inspection of every OS launcher surface is not claimed.
 
-## Core/server checks
+Actual Chromium on a private RC7 standalone verifies the cold Dark default with a light OS, saved Light/System after reload, visible branding and native control color scheme. The [gallery](SCREENSHOTS.md) contains three actual dark captures. The nine-node/eight-edge hero has exact bottom-source/top-target endpoints, descending geometry, no clipping/overlap/crossings and a 70px minimum vertical gap. Prepared synthetic replies are examples, not model benchmarks; no inference is submitted for those captures.
 
-Host Node 22.23.4: 549 tests, 548 pass, zero fail, one Alpine-only skip; lint, TypeScript and all 33 build pages pass. Native Alpine storage/SIGKILL checks cover that skip. Eight mounted-React custom-onboarding regressions pass on all three desktop jobs.
+Desktop release checks remain available since RC6. Download update opens the matching official installer after consent; installation stays manual. Background checks are disabled in deterministic native acceptance. See [update behavior](DESKTOP.md#update-notifications).
 
-RC6 leaves shared application/provider/context/database/runtime/media code and dependency declarations unchanged from the RC5 build source. The last complete isolated server Chromium/Responses/vision/multipart/usage/privacy/admission/cancel/slow-body checkpoint and data-preserving production rollout remain RC5, as documented in the [RC5 record](https://github.com/dannychirkov/llm-canvas/blob/v0.1.0-rc.5/docs/RELEASE-VERIFICATION.md). The existing production server remains RC5; this desktop/documentation release does not migrate or redeploy its data.
+## Host and server checks
 
-The README [gallery](SCREENSHOTS.md) shows three actual RC5 Chromium captures using prepared synthetic content. They are presentation examples, not model benchmarks or production-account screenshots.
+Pinned Node 22.23.4: 564 tests, 563 pass, zero fail, one host BusyBox-only skip covered on native Alpine. Lint/build/TypeScript and all 33 pages pass. Eight mounted-React custom-onboarding regressions pass on each desktop OS.
+
+Model execution/context/accounting APIs and database schema are unchanged by this branding/theme release. On a consistent private persistence copy, the new native image passes real Chromium login, custom setup/discovery/model selection/Finish, inspector/Undo/Restore, fresh selected dependency execution, Save/reload/usage/logout. Responses JSON/SSE/vision, multipart editing/private media/usage and actual HTTP admission/cancel/slow-body checks pass using synthetic fixtures.
+
+Server promotion uses a fresh stopped-volume backup and retains the previous image. Database bytes/all logical rows/uploads/installation secret remain unchanged; canonical authentication and all compiled static asset bytes match. No production inference is used to validate this UI release. This is scoped acceptance, not a general security or universal-platform certification.
 
 ## Sources and notices
 

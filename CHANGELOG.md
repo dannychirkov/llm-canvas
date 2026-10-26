@@ -4,12 +4,15 @@
 
 Changes after the release-candidate baseline will be recorded here. A version bump does not publish a release or establish release readiness.
 
-## 0.1.0-rc.7 — 2026-10-25
+## 0.1.0-rc.7 — 2026-10-26
 
 - Use the original server favicon as the shared browser, Apple, desktop window, installer and application logo; retain all original ICO frames and generate the platform formats from the same artwork.
 - Start in dark mode by default, preserve explicit Light/System preferences, and give native controls the matching color scheme.
-- Replace README screenshots with a dark nine-node workflow arranged from top to bottom, with verified bottom-to-top handle connections, no overlaps or crossing paths, and a matching inspector/provider gallery.
+- Replace README screenshots with a dark nine-node workflow arranged from top to bottom, with verified connections from each source's bottom handle to its target's top handle, no overlaps or crossing paths, and a matching inspector/provider gallery.
 - Remove merged public validation/old release branches while preserving release tags and reachable history; record source line counts separately from dependencies and generated output.
+- Pass 564 host tests (563 passed, zero failed, one separately covered Alpine-only skip), lint/build, all three native installers, copied-data browser/protocol/admission checks and a data-preserving server rollout. Correct the Windows ASAR fixture path without weakening artifact checks.
+- Cancel obsolete settings requests during session/document navigation, ignore stale results and reload after cached-page restoration; preserve real network-error reporting.
+- Make the two exact branding assets accessible before sign-in while preserving private-media and neighboring-path protection.
 
 ## 0.1.0-rc.6 — 2026-10-25
 
